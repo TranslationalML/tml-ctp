@@ -4,7 +4,7 @@ Tools, whilelists, blacklists, configuration files for depersonalising imaging d
 
 ## Getting started
 
-The RSNA MIRC Clinical Trial Processor (CTP) DICOM anonymiser is the core engine. Doc is here: <https://mircwiki.rsna.org/index.php?title=The_CTP_DICOM_Anonymizer>.
+The RSNA MIRC Clinical Trial Processor (CTP) DICOM anonymiser is the core engine. CTP doc is here: <https://mircwiki.rsna.org/index.php?title=MIRC_CTP> and the doc for the syntax for the anonymiser script is here: <https://mircwiki.rsna.org/index.php?title=The_CTP_DICOM_Anonymizer>.
 
 Start by looking at the basic batcher script `batchSubjects.py` to apply CTP on many subjects.
 
