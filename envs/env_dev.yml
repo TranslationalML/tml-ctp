@@ -1,0 +1,10 @@
+name: depersonalisation
+channels:
+  - conda-forge
+  - defaults
+  - ioos
+  - anaconda-platform
+dependencies:
+  - python=3.10
+  - ipython
+  - tqdm
