@@ -45,7 +45,7 @@
  <e en="T" t="00080090" n="ReferringPhysicianName">@empty()</e>
  <e en="T" t="00080092" n="ReferringPhysicianAddress">@remove()</e>
  <e en="T" t="00080094" n="ReferringPhysicianPhoneNumbers">@remove()</e>
- <e en="T" t="00080096" n="ReferringPhysiciansIDSeq">@remove()</e>
+ <e en="T" t="00080096" n="ReferringPhysiciansIDSequence">@remove()</e>
  <e en="F" t="00080100" n="CodeValue"></e>
  <e en="F" t="00080102" n="CodingSchemeDesignator"></e>
  <e en="F" t="00080103" n="CodingSchemeVersion"></e>
