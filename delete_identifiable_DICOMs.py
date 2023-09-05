@@ -30,18 +30,37 @@ def delete_identifiable_dicom_file(
         raise
 
     delete_this_file = False
+
+    # parse DICOM header
     attributes = dataset.dir("")
     if "ImageType" in attributes:
         if 'SCREEN SAVE' in dataset.data_element('ImageType').value:
             delete_this_file = True
+        if 'DISPLAY' in dataset.data_element('ImageType').value:
+            delete_this_file = True
+        if 'OTHER' in dataset.data_element('ImageType').value:
+            delete_this_file = True
         if 'SECONDARY' in dataset.data_element('ImageType').value and 'CT' in dataset.data_element('Modality').value:
             delete_this_file = True
+
     if "Modality" in attributes:
         if 'SR' in dataset.data_element('Modality').value:
             delete_this_file = True
+
     if "ProtocolName" in attributes:
         my_re_pn=re.compile('(?i).*(Scout|localizer|t2_haste_sag_ipat2).*')
         if my_re_pn.search(dataset.data_element('ProtocolName').value) is not None:
+            delete_this_file = True
+
+    if "SeriesDescription" in attributes:
+        my_re_sd_morpho=re.compile('(?i).*(morpho|DEV).*')
+        if my_re_sd_morpho.search(dataset.data_element('SeriesDescription').value) is not None:
+            delete_this_file = True
+        my_re_sd_tof=re.compile('(?i).*tof.*')
+        if my_re_sd_tof.search(dataset.data_element('SeriesDescription').value) is not None:
+            delete_this_file = True
+        my_re_sd_report = re.compile('(?i).*report.*')
+        if my_re_sd_report.search(dataset.data_element('SeriesDescription').value) is not None:
             delete_this_file = True
 
     if delete_this_file:
