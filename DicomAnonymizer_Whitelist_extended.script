@@ -66,7 +66,7 @@
  <e en="T" t="00081048" n="PhysicianOfRecord">@remove()</e>
  <e en="T" t="00081049" n="PhysicianOfRecordIdSequence">@remove()</e>
  <e en="T" t="00081050" n="PerformingPhysicianName">@remove()</e>
- <e en="T" t="00081052" n="PerformingPhysicianIdSeq">@remove()</e>
+ <e en="T" t="00081052" n="PerformingPhysicianIdSequence">@remove()</e>
  <e en="T" t="00081060" n="NameOfPhysicianReadingStudy">@remove()</e>
  <e en="T" t="00081062" n="PhysicianReadingStudyIdSeq">@remove()</e>
  <e en="T" t="00081070" n="OperatorName">@remove()</e>
