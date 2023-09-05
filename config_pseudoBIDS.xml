@@ -1,0 +1,35 @@
+<Configuration>
+    <Server
+        maxThreads="100"
+        port="8041"/>
+    <Pipeline name="DICOM De-identification to Local Storage">
+        <DirectoryImportService
+            class="org.rsna.ctp.stdstages.DirectoryImportService"
+            import="roots/DirectoryImportService/import"
+            name="DirectoryImportService"
+            quarantine="quarantines/DirectoryImportService"
+            root="roots/DirectoryImportService"/>
+        <IDMap
+            class="org.rsna.ctp.stdstages.IDMap"
+            name="IDMap"
+            root="roots/IDMap"/>
+        <DicomAnonymizer
+            class="org.rsna.ctp.stdstages.DicomAnonymizer"
+            lookupTable="scripts/LookupTable.properties"
+            name="DicomAnonymizer"
+            quarantine="quarantines/DicomAnonymizer"
+            root="roots/DicomAnonymizer"
+            script="scripts/DicomAnonymizer_Whitelist_extended.script"/>
+        <DirectoryStorageService
+            acceptDuplicates="no"
+            class="org.rsna.ctp.stdstages.DirectoryStorageService"
+            defaultString=""
+            logDuplicates="yes"
+            name="DirectoryStorageService"
+            quarantine="quarantines/DirectoryStorageService"
+            root="roots/DirectoryStorageService"
+            setStandardExtensions="yes"
+			      structure="sub-[0010,0020]/ses-[0008,0020][0008,0030]/[0020,0011]_[0008,103E]"
+            whitespaceReplacement="_"/>
+    </Pipeline>
+</Configuration>
