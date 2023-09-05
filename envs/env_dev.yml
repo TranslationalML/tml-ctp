@@ -7,4 +7,5 @@ channels:
 dependencies:
   - python=3.10
   - ipython
-  - tqdm
+  - tqdm=4.66
+  - pydicom=2.4
