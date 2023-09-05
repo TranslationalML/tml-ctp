@@ -9,3 +9,4 @@ dependencies:
   - ipython
   - tqdm=4.66
   - pydicom=2.4
+  - mypy=1.5
