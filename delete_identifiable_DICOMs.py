@@ -1,12 +1,14 @@
+
+import argparse
+import os
+import re
+import sys
 import warnings
 
-import pydicom
 from glob import glob
-import sys
-import os
-import warnings
+
+import pydicom
 from tqdm import tqdm
-import argparse
 
 def delete_identifiable_dicom_file(
         filename: str) -> None:
@@ -37,6 +39,10 @@ def delete_identifiable_dicom_file(
     if "Modality" in attributes:
         if 'SR' in dataset.data_element('Modality').value:
             delete_this_file = True
+    if "ProtocolName" in attributes:
+        my_re_pn=re.compile('(?i).*(Scout|localizer|t2_haste_sag_ipat2).*')
+        if my_re_pn.search(dataset.data_element('ProtocolName').value) is not None:
+            delete_this_file = True
 
     if delete_this_file:
         os.remove(filename)
@@ -53,7 +59,7 @@ def sanitize_all_dicoms_within_root_folder(
         pattern_dicom_files: the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
             ses-20170115/0002-MPRAGE/*.dcm
     Returns :
-        dict : Dictionary keeping track of the new patientIDs and old patientIDs mappings.
+        int : always 0
     """
 
     # List all  patient directories.
