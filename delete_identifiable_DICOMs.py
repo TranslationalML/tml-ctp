@@ -93,8 +93,6 @@ def delete_identifiable_dicom_file(
             if any([this_seqname in dataset.data_element('SequenceName').value for this_seqname in T1W_TO_REMOVE]) and 'ORIGINAL' in dataset.data_element('ImageType') :
                 delete_this_file = True
 
-        raise NotImplementedError('delete_T1w is not implemented')
-
     if not delete_this_file and delete_T2w:
         # Transverse 2D FLAIR (turbo inversion recovery): SequenceName *tir2d1_15, ScanningSequence: SE, MRAcquisitionType: 2D, ImageType ORIGINAL\PRIMARY
         # Other FLAIR: SequenceName: spcir, MRAcquisitionType: 3D
@@ -169,14 +167,15 @@ def sanitize_all_dicoms_within_root_folder(
                     if n_deleted_files_in_series > 0:
                         print(f"Deleted {n_deleted_files_in_series} files from series {series_dir}")
     return 0
+
 def main(argv):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--in_folder", "-d", help="Root dir to the dicom files to be screened for identifiables files.",
                         default=os.path.join(".", "data"), required=True)
-    parser.add_argument("--delete_T1w", "-i", help="Delete potentially identifiable T1-weighted images such as MPRAGE",
+    parser.add_argument("--delete_T1w", "-t1w", help="Delete potentially identifiable T1-weighted images such as MPRAGE",
                         default=False, required=False, action='store_true')
-    parser.add_argument("--delete_T2w", "-i", help="Delete potentially identifiable T1-weighted images such as FLAIR",
+    parser.add_argument("--delete_T2w", "-t2w", help="Delete potentially identifiable T1-weighted images such as FLAIR",
                         default=False, required=False, action='store_true')
 
     args = parser.parse_args()
