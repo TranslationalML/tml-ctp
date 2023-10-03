@@ -6,6 +6,7 @@ import subprocess
 import random
 import traceback
 import string
+import uuid
 
 # Function to check if any files are left in a given folder
 def is_there_files_left(path):
@@ -28,6 +29,7 @@ def launch_ctp_runner(ctp_runner, first_time=True):
     # Launch the CTP Runner
     subprocess.Popen(['java', '-jar', ctp_runner],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+
 def update_config_file(original_config):
     with open(original_config, 'r') as f:
         lines = f.readlines()
@@ -35,6 +37,17 @@ def update_config_file(original_config):
     # Assuming the DATEINC is always at the second line
     dateinc_value = random.randint(-30, 30)
     lines[1] = f' <p t="DATEINC">{dateinc_value}</p>\n'
+    
+    # Generate a UUID for the PatientID
+    patient_id_uuid = str(uuid.uuid4().int)[:11]
+
+    # Find the line that sets the PatientID and modify it
+    patient_id_line_index = next((i for i, line in enumerate(lines) if 'n="PatientID"' in line), None)
+    if patient_id_line_index is not None:
+        lines[patient_id_line_index] = f'<e en="T" t="00100020" n="PatientID">{patient_id_uuid}</e>\n'
+    else:
+        # If the PatientID line does not exist, append it to the end
+        lines.append(f'<e en="T" t="00100020" n="PatientID">{patient_id_uuid}</e>\n')
 
     with open(original_config, 'w') as f:
         f.writelines(lines)
@@ -59,9 +72,9 @@ def main():
     first_time = True  # To track if CTP has been launched already
 
 
-    CTP_directory = '/home/jonathan/Apps/CTP/'
+    CTP_directory = '/media/jonathan/TMLHD4/CTP/'
     input_folders = '/media/jonathan/WDelements/ASTRAL/'
-    original_config   = CTP_directory + 'scripts/DicomAnonymizer_Whitelist_extended.script'
+    original_config   = CTP_directory + 'scripts/DicomAnonymizer_Whitelist_extended_randomSubjectID.script'
     CTP_import_folder = CTP_directory + 'roots/DirectoryImportService/import/'
     CTP_queue_folder  = CTP_directory + 'roots/DirectoryImportService/queue/'
     CTP_output_folder = CTP_directory + 'roots/DirectoryStorageService/'
@@ -74,8 +87,9 @@ def main():
 
     all_patient_folders = [dir for dir in os.listdir(input_folders) if os.path.isdir(os.path.join(input_folders, dir))]
     all_patient_folders.sort()
-    print('Restricting patient list to first 450 patients to save time')
-    all_patient_folders=all_patient_folders[0:450]
+    print('Restricting patient list to first N patients to save time')
+    N = 450
+    all_patient_folders=all_patient_folders[0:N]
 
     CTP_folder_list = [dir for dir in os.listdir(CTP_output_folder) if os.path.isdir(os.path.join(CTP_output_folder, dir))]
 
