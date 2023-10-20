@@ -151,6 +151,7 @@ def get_parser():
         required=True,
         help="Script to be used for anonymization by the DAT.jar tool",
     )
+    return parser
 
 
 def main():
