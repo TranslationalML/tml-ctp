@@ -128,28 +128,28 @@ def update_config_file(original_config):
 
 def get_parser():
     parser = argparse.ArgumentParser(
-        description="Run DAT.jar with Docker (CTP Dicom Anonymizer Tool) to anonymize DICOM files"
+        description="Run DAT.jar (CTP DicomAnonymizerTool) with Docker to anonymize DICOM files."
     )
     parser.add_argument(
         "-i",
         "--input-folders",
         type=str,
         required=True,
-        help="Parent folder including all folders of files to be anonymized",
+        help="Parent folder including all folders of files to be anonymized.",
     )
     parser.add_argument(
         "-o",
         "--output-folder",
         type=str,
         required=True,
-        help="Folder where the anonymized files will be saved",
+        help="Folder where the anonymized files will be saved.",
     )
     parser.add_argument(
         "-s",
         "--dat-script",
         type=str,
         required=True,
-        help="Script to be used for anonymization by the DAT.jar tool",
+        help="Script to be used for anonymization by the DAT.jar tool.",
     )
     return parser
 
