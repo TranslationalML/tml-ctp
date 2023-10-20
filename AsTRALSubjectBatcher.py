@@ -60,6 +60,7 @@ def create_docker_dat_command(input_folder, output_folder, dat_script):
         list: The command to run DAT.jar with Docker
 
     """
+    image_tag = "astral-ctp-anonymizer:0.0.1"
     cmd = [
         "docker",
         "run",
@@ -70,7 +71,7 @@ def create_docker_dat_command(input_folder, output_folder, dat_script):
         f"{output_folder}:/output",
         "-v",
         f"{dat_script}:/scripts/da.script",
-        "ctpdat:0.0.1",
+        image_tag,
         "-in",
         "/input",
         "-out",
