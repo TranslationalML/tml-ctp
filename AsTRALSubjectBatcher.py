@@ -204,8 +204,8 @@ def main():
 
     with open(ASTRAL_CTP_ids_file, "a") as file:
         for i, folder in enumerate(all_patient_folders):
-            if last_processed_folder and folder <= last_processed_folder:
-                continue
+            # if last_processed_folder and folder <= last_processed_folder:
+                # continue
 
             # # Update the configuration file with a new random DATEINC
             # update_config_file(original_config)
