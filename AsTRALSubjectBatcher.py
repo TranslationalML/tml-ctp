@@ -70,14 +70,14 @@ def create_docker_dat_command(input_folder, output_folder, dat_script):
         "-v",
         f"{output_folder}:/output",
         "-v",
-        f"{dat_script}:/scripts/da.script",
+        f"{dat_script}:/scripts/anonymizer.script",
         image_tag,
         "-in",
         "/input",
         "-out",
         "/output",
         "-da",
-        "/scripts/da.script",
+        "/scripts/anonymizer.script",
     ]
     return cmd
 
