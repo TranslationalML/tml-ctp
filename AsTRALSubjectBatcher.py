@@ -220,9 +220,10 @@ def main():
             print(f"Processing {folder} [{i+1}/{len(all_patient_folders)}]")
 
             try:
+                os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
                 run_dat(
                     input_folder=os.path.join(input_folders, folder),
-                    output_folder=CTP_output_folder,
+                    output_folder=os.path.join(CTP_output_folder, folder),
                     dat_script=dat_script,
                 )
             except Exception as e:
