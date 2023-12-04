@@ -88,7 +88,7 @@ def main():
     all_patient_folders = [dir for dir in os.listdir(input_folders) if os.path.isdir(os.path.join(input_folders, dir))]
     all_patient_folders.sort()
     print('Restricting patient list to first N patients to save time')
-    N = 450
+    N = 3
     all_patient_folders=all_patient_folders[0:N]
 
     CTP_folder_list = [dir for dir in os.listdir(CTP_output_folder) if os.path.isdir(os.path.join(CTP_output_folder, dir))]
