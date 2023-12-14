@@ -315,8 +315,6 @@ def main():
             expected_total_time = expected_time_per_iteration * len(all_patient_folders)
             print(f"Expected total time: {expected_total_time} seconds")
 
-            if i > 10:
-                break
 
 
 if __name__ == "__main__":
