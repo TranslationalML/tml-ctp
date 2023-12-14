@@ -42,9 +42,6 @@ RUN apt-get remove -y ant git make && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy scripts for DicomAnonymizerTool to /app/DicomAnonymizerTool/scripts
-# COPY scripts/ scripts/
-
 # Create scripts folder for storing DicomAnonymizerTool scripts
 # Fix also permissions in case the scripts folder is mounted from the host 
 RUN mkdir -p scripts && chmod 775 scripts
