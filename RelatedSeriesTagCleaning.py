@@ -110,8 +110,7 @@ def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_strin
 # Example usage
 # This will search for '<tag>some sensitive info</tag>' and if it finds 'sensitive',
 # it will replace the tag with 'This is a <replaced> secret </replaced>'
-print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
-
+# print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
 
 def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
     """Function to anonymize / replace first level and nested tags in a pydicom Dataset recursively.
@@ -170,6 +169,7 @@ def main(CTP_data_folder, original_cohort, ids_file):
 
         # [Todo] needs an exception when it can't find the pair of tags
         dangerous_tag_pairs = get_dangerous_tag_pairs(original_subject_folder, ctp_subject_folder)
+        print(dangerous_tag_pairs)
 
         for dirpath, dirnames, filenames in os.walk(ctp_subject_folder):
             for filename in filenames:

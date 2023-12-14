@@ -1,6 +1,6 @@
 <Configuration>
     <Server
-        maxThreads="20"
+        maxThreads="100"
         port="8041"/>
     <Pipeline name="DICOM De-identification to Local Storage">
         <DirectoryImportService
@@ -19,17 +19,17 @@
             name="DicomAnonymizer"
             quarantine="quarantines/DicomAnonymizer"
             root="roots/DicomAnonymizer"
-            script="scripts/DicomAnonymizer_Whitelist_extended.script"/>
+            script="scripts/DicomAnonymizer_Whitelist_extended_randomSubjectID.script"/>
         <DirectoryStorageService
             acceptDuplicates="no"
             class="org.rsna.ctp.stdstages.DirectoryStorageService"
-            defaultString="UNKNOWN"
+            defaultString=""
             logDuplicates="yes"
             name="DirectoryStorageService"
             quarantine="quarantines/DirectoryStorageService"
             root="roots/DirectoryStorageService"
             setStandardExtensions="yes"
-			      structure="[0010,0020]/[0008,0020][0008,0030]/[0020,0011]_[0018,9005]_[0008,103E]"
+			      structure="sub-[0010,0020]/ses-[0008,0020][0008,0030]/[0020,0011]_[0008,103E]"
             whitespaceReplacement="_"/>
     </Pipeline>
 </Configuration>

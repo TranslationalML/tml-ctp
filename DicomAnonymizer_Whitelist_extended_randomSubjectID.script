@@ -1,5 +1,5 @@
 <script>
- <p t="DATEINC">23</p>
+ <p t="DATEINC">24</p>
  <p t="NOTICE1">IMPORTANT: Be sure to review Series Descriptions for PHI!!</p>
  <p t="NOTICE2">IMPORTANT: Tags inside of sequences may contain PHI.</p>
  <p t="PROFILENAME">CTP Clinical Trial Default</p>
@@ -129,8 +129,8 @@
  <e en="F" t="00089209" n="AcquisitionContrast"></e>
  <e en="F" t="00089215" n="DerivationCodeSeq"></e>
  <e en="F" t="00089237" n="RefGrayscalePresentationStateSeq"></e>
- <e en="T" t="00100010" n="PatientName">@hashname(this,6,2)</e>
-<e en="T" t="00100020" n="PatientID">31443742988</e>
+<e en="T" t="00100010" n="PatientName">1211468</e>
+<e en="T" t="00100020" n="PatientID">14391073566</e>
  <e en="T" t="00100021" n="IssuerOfPatientID">@remove()</e>
  <e en="T" t="00100030" n="PatientBirthDate">@empty()</e>
  <e en="T" t="00100032" n="PatientBirthTime">@remove()</e>
@@ -639,8 +639,6 @@
  <e en="T" t="0019100c" n="PrivateSiemens">@keep()</e>
  <e en="T" t="0019100d" n="PrivateSiemensCS">@keep()</e>
  <e en="T" t="0019100e" n="PrivateSiemensCS2">@keep()</e>
- <e en="T" t="0020000d" n="StudyInstanceUID">@hashuid(@UIDROOT,this)</e>
- <e en="T" t="0020000e" n="SeriesInstanceUID">@hashuid(@UIDROOT,this)</e>
  <e en="T" t="00200010" n="StudyID">@empty()</e>
  <e en="F" t="00200011" n="SeriesNumber"></e>
  <e en="F" t="00200012" n="AcquisitionNumber"></e>

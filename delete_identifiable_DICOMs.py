@@ -11,9 +11,7 @@ import os
 import re
 import sys
 import warnings
-
 from glob import glob
-
 import pydicom
 from tqdm import tqdm
 

@@ -30,6 +30,7 @@ def launch_ctp_runner(ctp_runner, first_time=True):
     subprocess.Popen(['java', '-jar', ctp_runner],stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
+
 def update_config_file(original_config):
     with open(original_config, 'r') as f:
         lines = f.readlines()
@@ -49,12 +50,23 @@ def update_config_file(original_config):
         # If the PatientID line does not exist, append it to the end
         lines.append(f'<e en="T" t="00100020" n="PatientID">{patient_id_uuid}</e>\n')
 
+    # Generate a UUID for the PatientName
+    patient_name_uuid = str(uuid.uuid4().int)[:7]
+
+    # Find the line that sets the PatientName and modify it
+    patient_name_line_index = next((i for i, line in enumerate(lines) if 'n="PatientName"' in line), None)
+    if patient_name_line_index is not None:
+        lines[patient_name_line_index] = f'<e en="T" t="00100010" n="PatientName">{patient_name_uuid}</e>\n'
+    else:
+        # If the PatientName line does not exist, append it to the end
+        lines.append(f'<e en="T" t="00100010" n="PatientName">{patient_name_uuid}</e>\n')
+
     with open(original_config, 'w') as f:
         f.writelines(lines)
 
     return dateinc_value  # Return the generated value
 
-import os
+
 
 def check_free_space(folder_path, required_space_gb=1):
     """Check if there's at least `required_space_gb` GB free space in the folder."""
@@ -72,8 +84,8 @@ def main():
     first_time = True  # To track if CTP has been launched already
 
 
-    CTP_directory = '/media/jonathan/TMLHD4/CTP/'
-    input_folders = '/media/jonathan/WDelements/ASTRAL/'
+    CTP_directory = '/media/jonathan/TML4TB/CTP/'
+    input_folders = '/media/jonathan/SDD4TMe/test_delivery_original/'
     original_config   = CTP_directory + 'scripts/DicomAnonymizer_Whitelist_extended_randomSubjectID.script'
     CTP_import_folder = CTP_directory + 'roots/DirectoryImportService/import/'
     CTP_queue_folder  = CTP_directory + 'roots/DirectoryImportService/queue/'
@@ -87,8 +99,9 @@ def main():
 
     all_patient_folders = [dir for dir in os.listdir(input_folders) if os.path.isdir(os.path.join(input_folders, dir))]
     all_patient_folders.sort()
-    print('Restricting patient list to first N patients to save time')
     N = 450
+    print(f'Restricting patient list to first {N} patients to save time')
+    
     all_patient_folders=all_patient_folders[0:N]
 
     CTP_folder_list = [dir for dir in os.listdir(CTP_output_folder) if os.path.isdir(os.path.join(CTP_output_folder, dir))]
@@ -101,6 +114,8 @@ def main():
 
 
     last_processed_folder = None
+
+    processed_folders = []
     try:
         with open(ASTRAL_CTP_ids_file, 'r') as f:
             lines = f.readlines()
@@ -108,13 +123,20 @@ def main():
                 last_processed_folder = lines[-1].split()[0]
                 print(f'Resuming at {last_processed_folder}')
 
+                for line in lines:
+                    processed_folders.append(line.split()[0])
+
     except FileNotFoundError:
         pass
 
     with open(ASTRAL_CTP_ids_file, 'a') as file:
         for i, folder in enumerate(all_patient_folders):
-            if last_processed_folder and folder <= last_processed_folder:
+
+            if(folder in processed_folders):
                 continue
+
+            # if last_processed_folder and folder <= last_processed_folder:
+            #     continue
 
             # Update the configuration file with a new random DATEINC
             dateinc_value = update_config_file(original_config)
@@ -123,10 +145,12 @@ def main():
             launch_ctp_runner(ctp_runner, first_time)
 
             # Generate a random character
-            random_char = random.choice(string.ascii_letters)
+            #random_char = random.choice(string.ascii_letters)
 
-            # Copy the folder with a random character appended to its name
-            new_folder_name = f"{folder}{random_char}"
+            # REMOVED Copy the folder with a random character appended to its name
+            #new_folder_name = f"{folder}{random_char}"
+
+            new_folder_name = folder
             os.system(f"cp -r {os.path.join(input_folders, folder)} {os.path.join(CTP_import_folder, new_folder_name)}")
 
             print(f'Processing {folder} [{i+1}/{len(all_patient_folders)}]')
@@ -151,7 +175,7 @@ def main():
             end_time = time.time()
             elapsed_time = end_time - start_time
             expected_time_per_iteration = elapsed_time / (i+1)
-            expected_total_time = expected_time_per_iteration * len(all_patient_folders)
+            expected_total_time = expected_time_per_iteration * ( len(all_patient_folders) - i)
             print(f"Expected total time: {expected_total_time} seconds")
 
             # Check for available disk space
