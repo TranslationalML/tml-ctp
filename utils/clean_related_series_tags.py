@@ -155,6 +155,10 @@ def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
                     )
                 else:
                     elem.value = elem.value.replace(initial_str, new_str)
+            elif isinstance(elem.value, pydicom.tag.BaseTag):
+                # Handle case when the value of a tag is a tag e.g. '(0020, 9056)'.
+                # Otherwise it is seen as int or float and raises an error.
+                pass
             elif isinstance(elem.value, int) or isinstance(elem.value, float):
                 if initial_str.isnumeric():
                     elem.value = replace_str_in_number(elem.value, initial_str, new_str)
