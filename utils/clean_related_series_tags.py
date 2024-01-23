@@ -192,6 +192,7 @@ def main(CTP_data_folder, original_cohort, ids_file):
         print(dangerous_tag_pairs)
 
         for dirpath, dirnames, filenames in os.walk(ctp_subject_folder):
+            print(f'> Clean {dirpath}')
             for filename in filenames:
                 ctp_file_path = join(dirpath, filename)
                 ctp_file_image = pydicom.dcmread(ctp_file_path)
@@ -203,7 +204,7 @@ def main(CTP_data_folder, original_cohort, ids_file):
                     )
 
                 ctp_dicom_corrected.save_as(ctp_file_path)  # No turning back
-
+    print('Done!')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
