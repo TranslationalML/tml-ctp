@@ -13,8 +13,13 @@ Usage:
         -s /path/to/dat/script
 """
 
+try:
+    import getpass
+except ImportError:
+    pass
 import os
 import os.path
+import platform
 import time
 import argparse
 import shutil
@@ -38,6 +43,10 @@ def get_new_folder_id(CTP_output_folder, previous_folders):
         and dir not in previous_folders
     ]
     return folder[0]
+
+
+def is_windows_platform():
+    return platform.system() == "Windows"
 
 
 def run(cmd):
@@ -73,11 +82,21 @@ def create_docker_dat_command(input_folder, output_folder, dat_script):
         list: The command to run DAT.jar with Docker
 
     """
+
+    if is_windows_platform():
+        user_id = getpass.getuser()
+        group_id = 0
+    else:  # Linux or Mac
+        user_id = os.geteuid()
+        group_id = os.getegid()
+
     image_tag = "astral-ctp-anonymizer:0.0.1"
     cmd = [
         "docker",
         "run",
         "--rm",
+        "-u",
+        f"{user_id}:{group_id}",
         "-v",
         f"{input_folder}:/input",
         "-v",
