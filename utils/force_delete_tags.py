@@ -1,5 +1,13 @@
+#!/usr/bin/env python3
+
+# Copyright (C) 2023, The TranslationalML team and Contributors. All rights reserved.
+#  This software is distributed under the open-source Apache 2.0 license.
+
+"""Script to force delete tags (which can be nested) in DICOM data."""
+
 import os
 import pydicom
+
 
 def replace_str_in_number(elem_value, initial_str, new_str):
     """Function to replace a string in a number.
@@ -21,7 +29,9 @@ def replace_str_in_number(elem_value, initial_str, new_str):
     return elem_value_type(elem_value_str.replace(initial_str, new_str))
 
 
-def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_string, new_string):
+def replace_substr_in_tag(
+    elem_value, sensible_string, replace_string, tag_string, new_string
+):
     """Function to replace a substring within a tag if the tag contains a "sensitive" string.
 
     Args:
@@ -39,7 +49,7 @@ def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_strin
     elem_value_str = str(elem_value)
 
     # Check if tag_string contains the sensible_string
-    if sensible_string in elem_value_str[elem_value_str.find(tag_string):]:
+    if sensible_string in elem_value_str[elem_value_str.find(tag_string) :]:
         # Replace new_string with replace_string
         modified_new_string = new_string.replace(sensible_string, replace_string)
         # Replace tag_string in elem_value with modified_new_string
@@ -47,10 +57,19 @@ def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_strin
 
     return elem_value_str
 
+
 # Example usage
 # This will search for '<tag>some sensitive info</tag>' and if it finds 'sensitive',
 # it will replace the tag with 'This is a <replaced> secret </replaced>'
-print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
+print(
+    replace_substr_in_tag(
+        "<tag>some sensitive info</tag>",
+        "sensitive",
+        "replaced",
+        "<tag>",
+        "This is a <replaced> secret </replaced>",
+    )
+)
 
 
 def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
@@ -96,6 +115,7 @@ def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
                             )
     return ds
 
+
 def process_dicom_file(filepath, tags_to_delete):
     """Modify the DICOM file to remove specified tags."""
     ds = pydicom.dcmread(filepath)
@@ -107,49 +127,62 @@ def process_dicom_file(filepath, tags_to_delete):
             modified = True
 
     if modified:
-        ds.save_as(filepath)    # Overwrite the original file
+        ds.save_as(filepath)  # Overwrite the original file
         print(f"Modified {filepath}")
+
 
 def process_directory(directory, tags_to_delete):
     """Recursively process all DICOM files in a directory."""
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.lower().endswith(".dcm"):  # Check for .dcm extension; This is the case of CTP data, but not for RAW CHUV
+            if file.lower().endswith(
+                ".dcm"
+            ):  # Check for .dcm extension; This is the case of CTP data, but not for RAW CHUV
                 process_dicom_file(os.path.join(root, file), tags_to_delete)
 
+
+def search_for_sensible_tags(dataset, data_element):
+    """Callback function to search for sensible tags."""
+    for tag in sensible_tags:
+        if tag in str(data_element.value):
+            print(
+                f"*** Sensible tag found '{tag}' in element {data_element.name} with value {data_element.value}"
+            )
+            dangerous_tag_names.append(data_element.name)
+
+
 # # Specify the tags you want to delete
-# tags_to_delete = [(0x0008, 0x1250),(0x0008,0x0031)]  
+# tags_to_delete = [(0x0008, 0x1250),(0x0008,0x0031)]
 
 # # Specify the directory containing the DICOM files
 # dicom_directory = "/media/TMLHD4/CTP/roots/DirectoryStorageService/"
 # process_directory(dicom_directory, tags_to_delete)
 
+if __name__ in "__main__":
 
-sensible_tags = []
+    sensible_tags = []
 
-ctp_dicom = pydicom.dcmread('/media/SDD4T2/delivery_ASAP_Siemens/sub-2199415271/ses-20190524001934/6001_ep2d_diff_AVC/1.2.840.113654.2.70.1.20012587678525810311762139247823081.dcm')
+    ctp_dicom = pydicom.dcmread(
+        "/media/SDD4T2/delivery_ASAP_Siemens/sub-2199415271/ses-20190524001934/6001_ep2d_diff_AVC/1.2.840.113654.2.70.1.20012587678525810311762139247823081.dcm"
+    )
 
-original_dicom = pydicom.dcmread("/media/TMLHD4/ASTRAL/sub-1048724/ses-20190428001934/06001-ep2d_diff_AVC/MR.1.3.12.2.1107.5.2.50.175636.30000019042800220136200000485")
+    original_dicom = pydicom.dcmread(
+        "/media/TMLHD4/ASTRAL/sub-1048724/ses-20190428001934/06001-ep2d_diff_AVC/MR.1.3.12.2.1107.5.2.50.175636.30000019042800220136200000485"
+    )
 
-# Extract the sensible tags
-patient_id = original_dicom.PatientID
-series_date = original_dicom.SeriesDate
+    # Extract the sensible tags
+    patient_id = original_dicom.PatientID
+    series_date = original_dicom.SeriesDate
 
-sensible_tags.append(patient_id)
+    sensible_tags.append(patient_id)
 
-ctp_dicom_corrected = anonymize_tag_recurse(ctp_dicom, patient_id, ctp_dicom.PatientID)
+    ctp_dicom_corrected = anonymize_tag_recurse(ctp_dicom, patient_id, ctp_dicom.PatientID)
 
-ctp_dicom_corrected = anonymize_tag_recurse(ctp_dicom_corrected, series_date, ctp_dicom.SeriesDate)
+    ctp_dicom_corrected = anonymize_tag_recurse(
+        ctp_dicom_corrected, series_date, ctp_dicom.SeriesDate
+    )
 
-dangerous_tag_names = []
+    dangerous_tag_names = []
 
-# Callback function to search for sensible tags
-def search_for_sensible_tags(dataset, data_element):
-    for tag in sensible_tags:
-        if tag in str(data_element.value):
-            print(f"*** Sensible tag found '{tag}' in element {data_element.name} with value {data_element.value}")
-            dangerous_tag_names.append(data_element.name)
-
-
-# Walk the ctp_dicom dataset using the callback function
-ctp_dicom_corrected.walk(search_for_sensible_tags)
+    # Walk the ctp_dicom dataset using the callback function
+    ctp_dicom_corrected.walk(search_for_sensible_tags)

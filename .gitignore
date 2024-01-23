@@ -1,1 +1,13 @@
 .idea
+
+# Python
+__pycache__/
+*.pyc
+
+# MacOSX
+.DS_Store
+
+# Build
+build/
+dist/
+**.egg-info/

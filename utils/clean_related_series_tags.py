@@ -1,64 +1,74 @@
-import numpy as np 
+#!/usr/bin/env python3
+
+# Copyright (C) 2023, The TranslationalML team and Contributors. All rights reserved.
+#  This software is distributed under the open-source Apache 2.0 license.
+
+"""Script to clean related series tags in DICOM data."""
+
+import numpy as np
 from os.path import join
 import os
-import pydicom 
+import pydicom
 import argparse
 
 
-__authors__ = [ "Jonathan Rafael  Patiño-Lopez","Sebastien no-more-rasta Turbier"]
+__authors__ = ["Jonathan Rafael  Patiño-Lopez", "Sebastien no-more-rasta Turbier"]
 
 __status__ = "development"
 
-def find_ref_image(root_dir):
 
+def find_ref_image(root_dir):
     """
-    Traverse directories starting from the given root folder and return 
+    Traverse directories starting from the given root folder and return
     the full path of the first file encountered.
-    
+
     Parameters:
     - root_dir (str): Path to the root directory from which to start the traversal.
-    
+
     Returns:
     - str: Full path to the first file encountered or None if no files are found.
     """
-        
+
     for dirpath, dirnames, filenames in os.walk(root_dir):
         if filenames:  # If there are files in the current directory
             return os.path.join(dirpath, filenames[0])
     return None
 
 
-def get_dangerous_tag_pairs(original_subject_folder,ctp_subject_folder):
+def get_dangerous_tag_pairs(original_subject_folder, ctp_subject_folder):
     """
     Extract potentially sensitive tag pairs from the reference DICOM images
     in both the original and CTP subject folders.
-    
-    The function tries to read the first DICOM image from both directories 
+
+    The function tries to read the first DICOM image from both directories
     and extracts the PatientID and SeriesDate tags.
-    
+
     Parameters:
     - original_subject_folder (str): Path to the original subject's directory.
     - ctp_subject_folder (str): Path to the CTP subject's directory.
-    
+
     Returns:
     - list: A list of sensitive tag pairs, or an empty list if an error occurs.
     """
     sensible_tag_pairs = []
-    try: 
+    try:
         original_ref_file = find_ref_image(original_subject_folder)
-        ctp_ref_file      = find_ref_image(ctp_subject_folder)
+        ctp_ref_file = find_ref_image(ctp_subject_folder)
 
         original_ref_image = pydicom.dcmread(original_ref_file)
         ctp_ref_image = pydicom.dcmread(ctp_ref_file)
-        sensible_tag_pairs.append([original_ref_image.PatientID, ctp_ref_image.PatientID])
+        sensible_tag_pairs.append(
+            [original_ref_image.PatientID, ctp_ref_image.PatientID]
+        )
 
-        sensible_tag_pairs.append([original_ref_image.SeriesDate, ctp_ref_image.SeriesDate])
+        sensible_tag_pairs.append(
+            [original_ref_image.SeriesDate, ctp_ref_image.SeriesDate]
+        )
 
     except:
         return []
-    
-    return sensible_tag_pairs
 
+    return sensible_tag_pairs
 
 
 def replace_str_in_number(elem_value, initial_str, new_str):
@@ -81,7 +91,9 @@ def replace_str_in_number(elem_value, initial_str, new_str):
     return elem_value_type(elem_value_str.replace(initial_str, new_str))
 
 
-def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_string, new_string):
+def replace_substr_in_tag(
+    elem_value, sensible_string, replace_string, tag_string, new_string
+):
     """Function to replace a substring within a tag if the tag contains a "sensitive" string.
 
     Args:
@@ -99,7 +111,7 @@ def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_strin
     elem_value_str = str(elem_value)
 
     # Check if tag_string contains the sensible_string
-    if sensible_string in elem_value_str[elem_value_str.find(tag_string):]:
+    if sensible_string in elem_value_str[elem_value_str.find(tag_string) :]:
         # Replace new_string with replace_string
         modified_new_string = new_string.replace(sensible_string, replace_string)
         # Replace tag_string in elem_value with modified_new_string
@@ -107,10 +119,11 @@ def replace_substr_in_tag(elem_value, sensible_string, replace_string, tag_strin
 
     return elem_value_str
 
+
 # Example usage
 # This will search for '<tag>some sensitive info</tag>' and if it finds 'sensitive',
 # it will replace the tag with 'This is a <replaced> secret </replaced>'
-#print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
+# print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
 
 
 def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
@@ -142,6 +155,10 @@ def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
                     )
                 else:
                     elem.value = elem.value.replace(initial_str, new_str)
+            elif isinstance(elem.value, pydicom.tag.BaseTag):
+                # Handle case when the value of a tag is a tag e.g. '(0020, 9056)'.
+                # Otherwise it is seen as int or float and raises an error.
+                pass
             elif isinstance(elem.value, int) or isinstance(elem.value, float):
                 if initial_str.isnumeric():
                     elem.value = replace_str_in_number(elem.value, initial_str, new_str)
@@ -169,31 +186,42 @@ def main(CTP_data_folder, original_cohort, ids_file):
         ctp_subject_folder = join(CTP_data_folder, pair[1])
 
         # [Todo] needs an exception when it can't find the pair of tags
-        dangerous_tag_pairs = get_dangerous_tag_pairs(original_subject_folder, ctp_subject_folder)
-
+        dangerous_tag_pairs = get_dangerous_tag_pairs(
+            original_subject_folder, ctp_subject_folder
+        )
         print(dangerous_tag_pairs)
 
         for dirpath, dirnames, filenames in os.walk(ctp_subject_folder):
+            print(f'> Clean {dirpath}')
             for filename in filenames:
                 ctp_file_path = join(dirpath, filename)
                 ctp_file_image = pydicom.dcmread(ctp_file_path)
                 ctp_dicom_corrected = ctp_file_image  # not necessary, just for clarity
 
                 for dangerous_tag in dangerous_tag_pairs:
-                    ctp_dicom_corrected = anonymize_tag_recurse(ctp_dicom_corrected, dangerous_tag[0], dangerous_tag[1])
+                    ctp_dicom_corrected = anonymize_tag_recurse(
+                        ctp_dicom_corrected, dangerous_tag[0], dangerous_tag[1]
+                    )
 
                 ctp_dicom_corrected.save_as(ctp_file_path)  # No turning back
+    print('Done!')
 
-
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Dangerous tags process and recursive overwrite of DICOM images.")
-    parser.add_argument('CTP_data_folder', type=str, help="Path to the CTP data folder.")
-    parser.add_argument('original_cohort', type=str, help="Path to the original cohort folder.")
-    parser.add_argument('ids_file', type=str, help="Path to the IDs file generated byt the CTP batcher file.")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Dangerous tags process and recursive overwrite of DICOM images."
+    )
+    parser.add_argument(
+        "CTP_data_folder", type=str, help="Path to the CTP data folder."
+    )
+    parser.add_argument(
+        "original_cohort", type=str, help="Path to the original cohort folder."
+    )
+    parser.add_argument(
+        "ids_file",
+        type=str,
+        help="Path to the IDs file generated byt the CTP batcher file.",
+    )
 
     args = parser.parse_args()
 
     main(args.CTP_data_folder, args.original_cohort, args.ids_file)
-
