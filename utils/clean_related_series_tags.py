@@ -12,12 +12,7 @@ import pydicom
 import argparse
 
 
-__authors__ = ["Jonathan Rafael  Patiño-Lopez", "Sebastien no-more-rasta Turbier"]
-
-__status__ = "development"
-
-
-def find_ref_image(root_dir):
+def find_ref_image(root_dir: str):
     """
     Traverse directories starting from the given root folder and return
     the full path of the first file encountered.
@@ -35,7 +30,7 @@ def find_ref_image(root_dir):
     return None
 
 
-def get_dangerous_tag_pairs(original_subject_folder, ctp_subject_folder):
+def get_dangerous_tag_pairs(original_subject_folder: str, ctp_subject_folder: str):
     """
     Extract potentially sensitive tag pairs from the reference DICOM images
     in both the original and CTP subject folders.
@@ -71,7 +66,7 @@ def get_dangerous_tag_pairs(original_subject_folder, ctp_subject_folder):
     return sensible_tag_pairs
 
 
-def replace_str_in_number(elem_value, initial_str, new_str):
+def replace_str_in_number(elem_value, initial_str: str, new_str: str):
     """Function to replace a string in a number.
 
     Args:
@@ -92,7 +87,7 @@ def replace_str_in_number(elem_value, initial_str, new_str):
 
 
 def replace_substr_in_tag(
-    elem_value, sensible_string, replace_string, tag_string, new_string
+    elem_value: str, sensible_string: str, replace_string: str, tag_string: str, new_string: str
 ):
     """Function to replace a substring within a tag if the tag contains a "sensitive" string.
 
@@ -126,7 +121,7 @@ def replace_substr_in_tag(
 # print(replace_substr_in_tag('<tag>some sensitive info</tag>', 'sensitive', 'replaced', '<tag>', 'This is a <replaced> secret </replaced>'))
 
 
-def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str, new_str):
+def anonymize_tag_recurse(ds: pydicom.Dataset, initial_str: str, new_str: str):
     """Function to anonymize / replace first level and nested tags in a pydicom Dataset recursively.
 
     It handles the cases where the value of the data element is one of the following:
