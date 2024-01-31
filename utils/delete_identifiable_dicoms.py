@@ -8,16 +8,10 @@
 import argparse
 import os
 import re
-import sys
 import warnings
 from glob import glob
 import pydicom
 from tqdm import tqdm
-
-
-__author__ = "Jonas Richiardi"
-__credits__ = ["Jonathan Patiño-Lopez", "Adrien Jammot", "Veronica Ravano"]
-__status__ = "development"
 
 
 IMAGETYPES_TO_REMOVE = ["SCREEN SAVE", "DISPLAY", "LOCALIZER", "OTHER"]
