@@ -87,7 +87,11 @@ def replace_str_in_number(elem_value, initial_str: str, new_str: str):
 
 
 def replace_substr_in_tag(
-    elem_value: str, sensible_string: str, replace_string: str, tag_string: str, new_string: str
+    elem_value: str,
+    sensible_string: str,
+    replace_string: str,
+    tag_string: str,
+    new_string: str,
 ):
     """Function to replace a substring within a tag if the tag contains a "sensitive" string.
 
@@ -201,11 +205,11 @@ def main():
     # Check if the CTP_data_folder exists
     if not os.path.isdir(CTP_data_folder):
         raise NotADirectoryError(f"{CTP_data_folder} is not a directory")
-    
+
     # Check if the original_cohort exists
     if not os.path.isdir(original_cohort):
         raise NotADirectoryError(f"{original_cohort} is not a directory")
-    
+
     # Check if the ids_file exists
     if not os.path.isfile(ids_file):
         raise FileNotFoundError(f"{ids_file} is not a file")
@@ -228,7 +232,7 @@ def main():
         print(dangerous_tag_pairs)
 
         for dirpath, _, filenames in os.walk(ctp_subject_folder):
-            print(f'> Clean {dirpath}')
+            print(f"> Clean {dirpath}")
             for filename in filenames:
                 ctp_file_path = join(dirpath, filename)
                 ctp_file_image = pydicom.dcmread(ctp_file_path)
@@ -240,7 +244,7 @@ def main():
                     )
 
                 ctp_dicom_corrected.save_as(ctp_file_path)  # No turning back
-    print('Done!')
+    print("Done!")
 
 
 if __name__ == "__main__":
