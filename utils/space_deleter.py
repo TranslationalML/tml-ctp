@@ -25,7 +25,16 @@ def get_free_space(path: str = "."):
 def create_dummy_files(
     path: str, size: int = 15 * 1024 * 1024 * 1024, threshold: int = 16 * 1024 * 1024 * 1024
 ):
-    """Create dummy files until free space drops below threshold."""
+    """Create dummy files until free space drops below threshold.
+    
+    Args:
+        path (str): path to the directory where to create the dummy files.
+        size (int): size of the dummy files in bytes.
+        threshold (int): free space threshold in bytes.
+        
+    Returns:
+        list: list of paths to the created dummy files.
+    """
     dummy_files = []
 
     while get_free_space(path) > threshold:
@@ -38,6 +47,11 @@ def create_dummy_files(
 
 
 def delete_dummy_files(dummy_files: list):
+    """Delete dummy files.
+    
+    Args:
+        dummy_files (list): list of paths to the dummy files.
+    """
     for dummy_file in dummy_files:
         os.remove(dummy_file)
 
