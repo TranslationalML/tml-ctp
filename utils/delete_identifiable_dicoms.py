@@ -169,7 +169,7 @@ def sanitize_all_dicoms_within_root_folder(
         )
 
     # Loop over patients...
-    for patient_index, patient in enumerate(tqdm(patients_folders)):
+    for _, patient in enumerate(tqdm(patients_folders)):
         print(f"processing {patient}")
         current_path = os.path.join(datapath, patient, pattern_dicom_files)
 
@@ -222,9 +222,9 @@ def sanitize_all_dicoms_within_root_folder(
     return 0
 
 
-def main(argv):
+def get_parser():
+    """Get parser object for script delete_identifiable_dicoms.py."""
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
         "--in_folder",
         "-d",
@@ -248,7 +248,13 @@ def main(argv):
         required=False,
         action="store_true",
     )
+    return parser
 
+
+def main():
+    """Main function of the `delete_identifiable_dicoms.py` script."""
+    # Parse command-line arguments
+    parser = get_parser()
     args = parser.parse_args()
 
     data_path = os.path.normcase(os.path.abspath(args.in_folder))
@@ -264,10 +270,10 @@ def main(argv):
         )
     )
     # Sanitize all files.
-    result = sanitize_all_dicoms_within_root_folder(
+    _ = sanitize_all_dicoms_within_root_folder(
         datapath=data_path, delete_T1w=delete_T1w, delete_T2w=delete_T2w
     )
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
