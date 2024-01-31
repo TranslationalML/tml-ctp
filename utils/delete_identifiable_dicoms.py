@@ -29,10 +29,10 @@ def delete_identifiable_dicom_file(
 ) -> bool:
     """If identifiable data is present, deletes the Dicom file.
 
-    Args :
-        filename: path to dicom image.
-        delete_T1w: also delete potentially identifiable (face-reconstructible) T1w images like MPRAGEs
-        delete_T2w: also delete potentially identifiable (face-reconstructible) T2w images like FLAIRs
+    Args:
+        filename (str): path to dicom image.
+        delete_T1w (bool): also delete potentially identifiable (face-reconstructible) T1w images like MPRAGEs
+        delete_T2w (bool): also delete potentially identifiable (face-reconstructible) T2w images like FLAIRs
 
     Returns:
         bool: whether the file was deleted (True) or not (False)
@@ -149,11 +149,11 @@ def sanitize_all_dicoms_within_root_folder(
     """Sanitizes all Dicom images located at the datapath in the structure specified by pattern_dicom_files parameter.
 
     Args :
-        datapath: The path to the dicom images.
-        pattern_dicom_files: the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
+        datapath (str): The path to the dicom images.
+        pattern_dicom_files (str): the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
             ses-20170115/0002-MPRAGE/*.dcm
-        delete_T1w: delete T1-weighted images that could be used to identify the patients
-        delete_T2w: delete T2-weighted images that could be used to identify the patients
+        delete_T1w (bool): delete T1-weighted images that could be used to identify the patients
+        delete_T2w (bool): delete T2-weighted images that could be used to identify the patients
 
     Returns :
         int : always 0
