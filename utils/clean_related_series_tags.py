@@ -17,11 +17,11 @@ def find_ref_image(root_dir: str):
     Traverse directories starting from the given root folder and return
     the full path of the first file encountered.
 
-    Parameters:
-    - root_dir (str): Path to the root directory from which to start the traversal.
+    Args:
+        root_dir (str): Path to the root directory from which to start the traversal.
 
     Returns:
-    - str: Full path to the first file encountered or None if no files are found.
+        str: Full path to the first file encountered or None if no files are found.
     """
 
     for dirpath, dirnames, filenames in os.walk(root_dir):
@@ -38,12 +38,12 @@ def get_dangerous_tag_pairs(original_subject_folder: str, ctp_subject_folder: st
     The function tries to read the first DICOM image from both directories
     and extracts the PatientID and SeriesDate tags.
 
-    Parameters:
-    - original_subject_folder (str): Path to the original subject's directory.
-    - ctp_subject_folder (str): Path to the CTP subject's directory.
+    Args:
+        original_subject_folder (str): Path to the original subject's directory.
+        ctp_subject_folder (str): Path to the CTP subject's directory.
 
     Returns:
-    - list: A list of sensitive tag pairs, or an empty list if an error occurs.
+        list: A list of sensitive tag pairs, or an empty list if an error occurs.
     """
     sensible_tag_pairs = []
     try:
@@ -70,12 +70,12 @@ def replace_str_in_number(elem_value, initial_str: str, new_str: str):
     """Function to replace a string in a number.
 
     Args:
-        elem_value : Data element value in which to replace the string
-        initial_str : Initial string to be replaced
-        new_str : New string to replace the initial string
+        elem_value: Data element value in which to replace the string
+        initial_str (str): Initial string to be replaced
+        new_str (str): New string to replace the initial string
 
     Returns:
-        number: Number with the replaced string
+        int or float: Number with the replaced string
     """
     # Save the type of the element value
     elem_value_type = type(elem_value)
