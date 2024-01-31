@@ -8,7 +8,9 @@
 import random
 import xml.etree.ElementTree as ET
 
-if __name__ == "__main__":
+
+def main():
+    """Main function of the `ctp_date_changer.py` script."""
     # load thet .script file
     tree = ET.parse('DICOM_Whitelisting_MasterProfile_CTP_20210507/DicomAnonymizer_Whitelist.script')
     # find the DATEINC tag
@@ -17,3 +19,7 @@ if __name__ == "__main__":
     rand_num = random.randint(0, 30)  # replace with your desired range
     dateinc_tag.text = str(rand_num)
     tree.write('DICOM_Whitelisting_MasterProfile_CTP_20210507/DicomAnonymizer_Whitelist_2.script')
+    
+
+if __name__ == "__main__":
+    main()    
