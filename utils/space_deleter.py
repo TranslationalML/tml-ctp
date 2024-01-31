@@ -16,14 +16,14 @@ Worflow:
 import os
 
 
-def get_free_space(path="."):
+def get_free_space(path: str = "."):
     """Return the free space in bytes."""
     stat = os.statvfs(path)
     return stat.f_frsize * stat.f_bavail
 
 
 def create_dummy_files(
-    path, size=15 * 1024 * 1024 * 1024, threshold=16 * 1024 * 1024 * 1024
+    path: str, size: int = 15 * 1024 * 1024 * 1024, threshold: int = 16 * 1024 * 1024 * 1024
 ):
     """Create dummy files until free space drops below threshold."""
     dummy_files = []
@@ -37,8 +37,7 @@ def create_dummy_files(
     return dummy_files
 
 
-def delete_dummy_files(dummy_files):
-    """Delete dummy files."""
+def delete_dummy_files(dummy_files: list):
     for dummy_file in dummy_files:
         os.remove(dummy_file)
 
