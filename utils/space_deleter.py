@@ -42,7 +42,8 @@ def delete_dummy_files(dummy_files: list):
         os.remove(dummy_file)
 
 
-if __name__ == "__main__":
+def main():
+    """Main function of the `space_deleter.py` script."""
     path_to_save = "."  # current directory; adjust if needed
 
     print("Checking free space...")
@@ -59,3 +60,7 @@ if __name__ == "__main__":
 
     final_free_space = get_free_space(path_to_save)
     print(f"Final free space: {final_free_space / (1024 * 1024 * 1024):.2f} GB")
+
+
+if __name__ == "__main__":
+    main()
