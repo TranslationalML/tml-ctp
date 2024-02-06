@@ -2,13 +2,14 @@
 
 `TML-CTP` project aims to depersonalize imaging data. It is developed by the Translational Machine Learning Lab at the Lausanne University Hospital for internal use as well as for open-source software distribution.
 
+**DISCLAIMER: The few template scripts provided by `TML-CTP` are only for testing it with your application. They are not intended to be used in a clinical or research setting, and should be considered incomplete test samples. DICOM files filtered through this program and associated scripts are not guaranteed to be free of Protected Health Information (PHI).**
+
 ## Description
 
 It dockerizes the Dicom Anonymizer Tool (DAT) of the Clinical Trial Processor (CTP), and provides:
 - a Python package to batch the anonymization process via the Docker image
 - a few template scripts for DAT.
 
-**DISCLAIMER: The few template scripts are only provided for testing TMP-CTP with your application. They are not intended to be used in a clinical or research setting, and should be considered incomplete test samples. DICOM files filtered through this program and associated scripts are not guaranteed to be free of Protected Health Information (PHI).**
 
 ## Pre-requisites
 
