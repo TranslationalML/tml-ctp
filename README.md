@@ -10,7 +10,6 @@ It dockerizes the Dicom Anonymizer Tool (DAT) of the Clinical Trial Processor (C
 - a Python package to batch the anonymization process via the Docker image
 - a few template scripts for DAT.
 
-
 ## Pre-requisites
 
 `TML-CTP` relies on the two main tools that has to be installed a-priori:
@@ -25,20 +24,20 @@ Note that `make` is a Linux tool. If you are on Windows, you will have to use th
 
 Installation of `TML-CTP` consists of three steps:
 
-1. Clone this repository locally::
+1. Clone this repository locally:
 
-     cd <preferred-installation-directory>
-     git clone git@github.com:TranslationalML/tml-ctp.git
-     cd tml-ctp
+        cd <preferred-installation-directory>
+        git clone git@github.com:TranslationalML/tml-ctp.git
+        cd tml-ctp
    
-2. Build the Docker image with `make`::
+2. Build the Docker image with `make`:
 
-    make build-docker
+       make build-docker
 
-3. In your Python 3.10 environment, install the Python package with `pip`::
+3. In your Python 3.10 environment, install the Python package with `pip`:
 
-   pip install .
-
+       pip install .
+  
   This will installed all Python dependencies along with the main `ctp_dat_batcher` script and a few other utility scripts.
 
 You should be ready to test `TML-CTP`!🚀 
