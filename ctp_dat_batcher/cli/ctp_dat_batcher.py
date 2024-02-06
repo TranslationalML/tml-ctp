@@ -114,20 +114,28 @@ def create_docker_dat_command(input_folder: str, output_folder: str, dat_script:
     return cmd
 
 
-def run_dat(input_folder: str, output_folder: str, dat_script: str):
+def run_dat(input_folder: str, output_folder: str, dat_script: str, new_patient_id: str = None, dateinc: int = None):
     """Run DAT.jar with Docker given the input folder, output folder and DAT script.
 
     Args:
         input_folder (str): Path to the folder of files to be anonymized
         output_folder (str): Path to the folder where the anonymized files will be saved
         dat_script (str): Path to the DAT script to be used for anonymization
+        new_patient_id (str): New PatientID to use in the DAT script
+        dateinc (int): New DATEINC value to use in the DAT script
     """
-    # Update the DAT script with a new random DATEINC
-    update_dat_script_file(dat_script)
+    # Update the DAT script with new PatientID, PatientName and DATEINC values
+    (new_patient_id, new_patient_name, dateinc) = update_dat_script_file(
+        dat_script, new_patient_id=new_patient_id, dateinc=dateinc
+    )
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(input_folder, output_folder, dat_script)
     # Run the command
     print(f"Running DAT with command: {' '.join(cmd)}")
+    print("with updated script containing:")
+    print(f"\t- PatientID: {new_patient_id}")
+    print(f"\t- PatientName: {new_patient_name}")
+    print(f"\t- DATEINC: {dateinc}")
     process = run(cmd)
     if process.returncode != 0:
         raise Exception(
