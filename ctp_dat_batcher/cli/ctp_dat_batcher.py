@@ -346,6 +346,8 @@ def main():
     input_folders = args.input_folders
     CTP_output_folder = args.output_folder
     dat_script = args.dat_script
+    new_patient_ids = args.new_ids
+    day_shifts = args.day_shift
 
     all_patient_folders = [
         dir
@@ -366,12 +368,24 @@ def main():
         for i, folder in enumerate(all_patient_folders):
             print(f"Processing {folder} [{i+1}/{len(all_patient_folders)}]")
 
+            if new_patient_ids is not None:
+                new_patient_id = new_patient_ids[folder]
+            else:
+                new_patient_id = None
+
+            if day_shifts is not None:
+                dateinc = day_shifts[folder]
+            else:
+                dateinc = None
+
             try:
                 os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
                 run_dat(
                     input_folder=os.path.join(input_folders, folder),
                     output_folder=os.path.join(CTP_output_folder, folder),
                     dat_script=dat_script,
+                    new_patient_id=new_patient_id,
+                    dateinc=dateinc,
                 )
             except Exception as e:
                 # TODO: see how to handle this error (e.g. break, continue, etc.)
