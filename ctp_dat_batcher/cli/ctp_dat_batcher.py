@@ -136,24 +136,41 @@ def run_dat(input_folder: str, output_folder: str, dat_script: str):
         )
 
 
-def update_dat_script_file(original_dat_script: str):
-    """Update the DAT script with a new random DATEINC.
+def update_dat_script_file(original_dat_script: str, new_patient_id: str = None, dateinc: int = None):
+    """Update the DAT script with a new DATEINC value, a new PatientID, and new random UUID for PatientName.
 
+    If `new_patient_id` is `None`, a new random UUID for the PatientID is generated.
+    If `dateinc` is `None`, a new random DATEINC value is generated between -30 and 30.
+    
     Note that this function assumes that the DATEINC is always at the second line of the DAT script.
     Moreover, the original DAT script is modified in place and the new DATEINC value is returned.
 
+    If the PatientID line or the PatientName line does not exist, they are appended to the end of the file.
+
     Args:
         original_dat_script (str): Path to the original DAT script
+        new_patient_id (str): New PatientID to use in the DAT script
+        dateinc (int): New DATEINC value to use in the DAT script
+
+    Returns:
+        tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
+
+    Raises:
+        ValueError: If the DATEINC is not found in the second line of the DAT script
     """
     with open(original_dat_script, "r") as f:
         lines = f.readlines()
 
     # Assuming the DATEINC is always at the second line
-    dateinc_value = random.randint(-30, 30)
-    lines[1] = f' <p t="DATEINC">{dateinc_value}</p>\n'
+    if "DATEINC" not in lines[1]:
+        raise ValueError("DATEINC not found in the second line of the DAT script")
+    if dateinc is None:
+        dateinc = random.randint(-30, 30)
+    lines[1] = f' <p t="DATEINC">{dateinc}</p>\n'
 
     # Generate a UUID for the PatientID
-    patient_id_uuid = str(uuid.uuid4().int)[:11]
+    if new_patient_id is None:
+        new_patient_id = str(uuid.uuid4().int)[:11]
 
     # Find the line that sets the PatientID and modify it
     patient_id_line_index = next(
@@ -162,13 +179,13 @@ def update_dat_script_file(original_dat_script: str):
     if patient_id_line_index is not None:
         lines[
             patient_id_line_index
-        ] = f'<e en="T" t="00100020" n="PatientID">{patient_id_uuid}</e>\n'
+        ] = f'<e en="T" t="00100020" n="PatientID">{new_patient_id}</e>\n'
     else:
         # If the PatientID line does not exist, append it to the end
-        lines.append(f'<e en="T" t="00100020" n="PatientID">{patient_id_uuid}</e>\n')
+        lines.append(f'<e en="T" t="00100020" n="PatientID">{new_patient_id}</e>\n')
 
     # Generate a UUID for the PatientName
-    patient_name_uuid = str(uuid.uuid4().int)[:7]
+    new_patient_name = str(uuid.uuid4().int)[:7]
 
     # Find the line that sets the PatientName and modify it
     patient_name_line_index = next(
@@ -177,17 +194,17 @@ def update_dat_script_file(original_dat_script: str):
     if patient_name_line_index is not None:
         lines[
             patient_name_line_index
-        ] = f'<e en="T" t="00100010" n="PatientName">{patient_name_uuid}</e>\n'
+        ] = f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n'
     else:
         # If the PatientName line does not exist, append it to the end
         lines.append(
-            f'<e en="T" t="00100010" n="PatientName">{patient_name_uuid}</e>\n'
+            f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n'
         )
 
     with open(original_dat_script, "w") as f:
         f.writelines(lines)
 
-    return dateinc_value  # Return the generated value
+    return (new_patient_id, new_patient_name, dateinc)  # Return the generated values as a tuple
 
 
 def rename_ctp_output_subject_folders(CTP_output_folder: str, subject_folder: str):
