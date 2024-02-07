@@ -8,16 +8,10 @@
 import argparse
 import os
 import re
-import sys
 import warnings
 from glob import glob
 import pydicom
 from tqdm import tqdm
-
-
-__author__ = "Jonas Richiardi"
-__credits__ = ["Jonathan Patiño-Lopez", "Adrien Jammot", "Veronica Ravano"]
-__status__ = "development"
 
 
 IMAGETYPES_TO_REMOVE = ["SCREEN SAVE", "DISPLAY", "LOCALIZER", "OTHER"]
@@ -29,10 +23,10 @@ def delete_identifiable_dicom_file(
 ) -> bool:
     """If identifiable data is present, deletes the Dicom file.
 
-    Args :
-        filename: path to dicom image.
-        delete_T1w: also delete potentially identifiable (face-reconstructible) T1w images like MPRAGEs
-        delete_T2w: also delete potentially identifiable (face-reconstructible) T2w images like FLAIRs
+    Args:
+        filename (str): path to dicom image.
+        delete_T1w (bool): also delete potentially identifiable (face-reconstructible) T1w images like MPRAGEs
+        delete_T2w (bool): also delete potentially identifiable (face-reconstructible) T2w images like FLAIRs
 
     Returns:
         bool: whether the file was deleted (True) or not (False)
@@ -149,11 +143,11 @@ def sanitize_all_dicoms_within_root_folder(
     """Sanitizes all Dicom images located at the datapath in the structure specified by pattern_dicom_files parameter.
 
     Args :
-        datapath: The path to the dicom images.
-        pattern_dicom_files: the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
+        datapath (str): The path to the dicom images.
+        pattern_dicom_files (str): the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
             ses-20170115/0002-MPRAGE/*.dcm
-        delete_T1w: delete T1-weighted images that could be used to identify the patients
-        delete_T2w: delete T2-weighted images that could be used to identify the patients
+        delete_T1w (bool): delete T1-weighted images that could be used to identify the patients
+        delete_T2w (bool): delete T2-weighted images that could be used to identify the patients
 
     Returns :
         int : always 0
@@ -169,7 +163,7 @@ def sanitize_all_dicoms_within_root_folder(
         )
 
     # Loop over patients...
-    for patient_index, patient in enumerate(tqdm(patients_folders)):
+    for _, patient in enumerate(tqdm(patients_folders)):
         print(f"processing {patient}")
         current_path = os.path.join(datapath, patient, pattern_dicom_files)
 
@@ -222,9 +216,9 @@ def sanitize_all_dicoms_within_root_folder(
     return 0
 
 
-def main(argv):
+def get_parser():
+    """Get parser object for script delete_identifiable_dicoms.py."""
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
         "--in_folder",
         "-d",
@@ -248,7 +242,13 @@ def main(argv):
         required=False,
         action="store_true",
     )
+    return parser
 
+
+def main():
+    """Main function of the `delete_identifiable_dicoms.py` script."""
+    # Parse command-line arguments
+    parser = get_parser()
     args = parser.parse_args()
 
     data_path = os.path.normcase(os.path.abspath(args.in_folder))
@@ -264,10 +264,10 @@ def main(argv):
         )
     )
     # Sanitize all files.
-    result = sanitize_all_dicoms_within_root_folder(
+    _ = sanitize_all_dicoms_within_root_folder(
         datapath=data_path, delete_T1w=delete_T1w, delete_T2w=delete_T2w
     )
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

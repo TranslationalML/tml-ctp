@@ -16,16 +16,25 @@ Worflow:
 import os
 
 
-def get_free_space(path="."):
+def get_free_space(path: str = "."):
     """Return the free space in bytes."""
     stat = os.statvfs(path)
     return stat.f_frsize * stat.f_bavail
 
 
 def create_dummy_files(
-    path, size=15 * 1024 * 1024 * 1024, threshold=16 * 1024 * 1024 * 1024
+    path: str, size: int = 15 * 1024 * 1024 * 1024, threshold: int = 16 * 1024 * 1024 * 1024
 ):
-    """Create dummy files until free space drops below threshold."""
+    """Create dummy files until free space drops below threshold.
+    
+    Args:
+        path (str): path to the directory where to create the dummy files.
+        size (int): size of the dummy files in bytes.
+        threshold (int): free space threshold in bytes.
+        
+    Returns:
+        list: list of paths to the created dummy files.
+    """
     dummy_files = []
 
     while get_free_space(path) > threshold:
@@ -37,13 +46,18 @@ def create_dummy_files(
     return dummy_files
 
 
-def delete_dummy_files(dummy_files):
-    """Delete dummy files."""
+def delete_dummy_files(dummy_files: list):
+    """Delete dummy files.
+    
+    Args:
+        dummy_files (list): list of paths to the dummy files.
+    """
     for dummy_file in dummy_files:
         os.remove(dummy_file)
 
 
-if __name__ == "__main__":
+def main():
+    """Main function of the `space_deleter.py` script."""
     path_to_save = "."  # current directory; adjust if needed
 
     print("Checking free space...")
@@ -60,3 +74,7 @@ if __name__ == "__main__":
 
     final_free_space = get_free_space(path_to_save)
     print(f"Final free space: {final_free_space / (1024 * 1024 * 1024):.2f} GB")
+
+
+if __name__ == "__main__":
+    main()
