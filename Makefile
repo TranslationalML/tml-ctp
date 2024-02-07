@@ -8,7 +8,7 @@ PROJECT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 # Set environment variables for the docker image name and tag
 IMAGE_NAME=ctp-anonymizer
 
-TAG=0.0.1
+TAG=1.0.0
 
 $(info TAG = $(TAG))
 # Replace +, /, _ with - to normalize the tag
