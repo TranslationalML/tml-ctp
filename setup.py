@@ -1,20 +1,32 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2023, The TranslationalML team and Contributors. All rights reserved.
-#  This software is distributed under the open-source Apache 2.0 license.
+# Copyright 2023-2024 Lausanne University and Lausanne University Hospital, Switzerland & Contributors
 
-"""`Setup.py` for CTP DAT Batcher."""
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""`Setup.py` for TML-CTP."""
+
 from os import path as op
 from setuptools import setup
 
-from ctp_dat_batcher.info import (
+from tml_ctp.info import (
     __version__,
     __packagename__
 )
 
 
 def main():
-    """Main function of CTP DAT Batcher ``setup.py``"""
+    """Main function of TML-CTP ``setup.py``"""
     root_dir = op.abspath(op.dirname(__file__))
 
     version = None
@@ -28,7 +40,7 @@ def main():
 
     # Setup configuration
     setup(
-        name="ctp_dat_batcher",
+        name="tml_ctp",
         version=version,
         cmdclass=cmdclass,
     )
