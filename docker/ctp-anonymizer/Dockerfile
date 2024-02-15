@@ -78,8 +78,8 @@ ARG VERSION=1.0
 # http://label-schema.org/rc1/
 LABEL org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.schema-version="1.0" \
-    org.label-schema.name="CTP DicomAnonymizerTool" \
-    org.label-schema.description="CTP DicomAnonymizerTool is a command line tool for anonymizing DICOM files." \
+    org.label-schema.name="TML CTP DicomAnonymizerTool in Docker" \
+    org.label-schema.description="Docker image containing the CTP DicomAnonymizerTool, a command line tool for anonymizing DICOM files." \
     org.label-schema.url="https://translationalml.github.io/" \
     org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.vcs-url="https://github.com/TranslationalML/tml-ctp" \
