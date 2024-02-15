@@ -58,7 +58,7 @@ def run(cmd: list):
     return process
 
 
-def create_docker_dat_command(input_folder: str, output_folder: str, dat_script: str, image_tag: str = f"ctp-anonymiser:{__version__}"):
+def create_docker_dat_command(input_folder: str, output_folder: str, dat_script: str, image_tag: str = f"ctp-anonymizer:{__version__}"):
     """Create the command to run DAT.jar with Docker.
     
     This generates a command to run DAT.jar with Docker in the following format:
@@ -77,7 +77,7 @@ def create_docker_dat_command(input_folder: str, output_folder: str, dat_script:
         input_folder (str): Path to the folder of files to be anonymized
         output_folder (str): Path to the folder where the anonymized files will be saved
         dat_script (str): Path to the DAT script to be used for anonymization
-        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: ctp-anonymiser:<version>)
+        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: ctp-anonymizer:<version>)
     
     Returns:
         list: The command to run DAT.jar with Docker
