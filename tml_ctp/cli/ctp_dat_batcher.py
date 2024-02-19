@@ -41,7 +41,7 @@ import random
 import uuid
 import pydicom
 
-from tml_ctp.info import __version__
+from tml_ctp.info import __version__, __container_name__
 
 
 def is_windows_platform():
@@ -58,7 +58,12 @@ def run(cmd: list):
     return process
 
 
-def create_docker_dat_command(input_folder: str, output_folder: str, dat_script: str, image_tag: str = f"ctp-anonymizer:{__version__}"):
+def create_docker_dat_command(
+    input_folder: str,
+    output_folder: str,
+    dat_script: str,
+    image_tag: str = f"{__container_name__}:{__version__}",
+):
     """Create the command to run DAT.jar with Docker.
     
     This generates a command to run DAT.jar with Docker in the following format:
@@ -141,7 +146,12 @@ def run_dat(
         dat_script, new_patient_id=new_patient_id, dateinc=dateinc
     )
     # Create the command to run DAT.jar with Docker
-    cmd = create_docker_dat_command(input_folder, output_folder, dat_script)
+    cmd = create_docker_dat_command(
+        input_folder=input_folder,
+        output_folder=output_folder,
+        dat_script=dat_script,
+        image_tag=f"{__container_name__}:{__version__}",
+    )
     # Run the command
     print(f"Running DAT with command: {' '.join(cmd)}")
     print("with updated script containing:")
