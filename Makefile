@@ -20,10 +20,10 @@
 PROJECT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Set environment variables for the docker image name and tag
-IMAGE_NAME=ctp-anonymizer
+IMAGE_NAME=$(shell python get_container_name.py)
 
-TAG=1.0.0
-
+# Define the version tag 
+TAG = $(shell python get_version.py)
 $(info TAG = $(TAG))
 # Replace +, /, _ with - to normalize the tag
 # in case the tag includes a branch name
