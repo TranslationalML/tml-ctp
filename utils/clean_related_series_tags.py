@@ -52,18 +52,39 @@ def get_dangerous_tag_pairs(original_subject_folder: str, ctp_subject_folder: st
 
         original_ref_image = pydicom.dcmread(original_ref_file)
         ctp_ref_image = pydicom.dcmread(ctp_ref_file)
+
         sensible_tag_pairs.append(
             [original_ref_image.PatientID, ctp_ref_image.PatientID]
         )
-
         sensible_tag_pairs.append(
             [original_ref_image.SeriesDate, ctp_ref_image.SeriesDate]
         )
 
-    except:
-        return []
 
-    return sensible_tag_pairs
+    except:
+        sensible_tag_pairs = []
+
+    list_issues = [] 
+    if sensible_tag_pairs == []:   
+        try:
+            original_patientID = original_ref_image.PatientID
+        except:
+            list_issues.append("original_ref_image.PatientID")    
+        try:
+            ctp_patientID = ctp_ref_image.PatientID
+        except:
+            list_issues.append("ctp_ref_image.PatientID")    
+ 
+        try:
+            original_SeriesDate = original_ref_image.SeriesDate
+        except:
+            list_issues.append("original_ref_image.SeriesDate")    
+        try:
+            ctp_SeriesDate = ctp_ref_image.SeriesDate
+        except:
+            list_issues.append("ctp_ref_image.SeriesDate")    
+
+    return sensible_tag_pairs, list_issues
 
 
 def replace_str_in_number(elem_value, initial_str: str, new_str: str):
@@ -221,15 +242,23 @@ def main():
     if not isinstance(ids_pairs[0], np.ndarray):
         ids_pairs = np.array([ids_pairs])
 
-    for pair in ids_pairs:
+    for idx, pair in enumerate(ids_pairs):
+        print(idx, len(ids_pairs))
+
         original_subject_folder = join(original_cohort, pair[0])
         ctp_subject_folder = join(CTP_data_folder, pair[1])
 
         # [Todo] needs an exception when it can't find the pair of tags
-        dangerous_tag_pairs = get_dangerous_tag_pairs(
+        dangerous_tag_pairs, list_issues = get_dangerous_tag_pairs(
             original_subject_folder, ctp_subject_folder
         )
         print(dangerous_tag_pairs)
+
+        if len(list_issues) > 0:
+            log_file = join(CTP_data_folder, 'all_file_issues.txt')
+            with open(log_file, 'a') as file:
+                file.write(f'{pair[0]} {pair[1]} {list_issues} \n')
+            file.close()	
 
         for dirpath, _, filenames in os.walk(ctp_subject_folder):
             print(f"> Clean {dirpath}")
