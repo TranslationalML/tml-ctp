@@ -16,6 +16,13 @@
 
 .DEFAULT_GOAL := help
 
+# Check if Python is installed, otherwise, exit with an error message
+PYTHON=$(shell command -v python)
+
+ifeq (, $(PYTHON))
+    $(error "PYTHON not found. Please install or activate an environment with Python 3.10 or higher.")
+endif
+
 # Define the project directory
 PROJECT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
@@ -56,6 +63,22 @@ install-python:
 .PHONY: install-python-all
 install-python-all:
 	pip install -e .[all]
+
+#build-python-wheel: @ Build the python wheel
+.PHONY: build-python-wheel
+build-python-wheel: clean-python-build 
+	python setup.py sdist bdist_wheel
+
+#clean-python-build: @ Clean the python build directory
+.PHONY: clean-python-build
+clean-python-build:
+	rm -rf build
+	rm -rf dist
+
+#install-python-wheel: @ Install the python wheel
+.PHONY: install-python-wheel
+install-python-wheel: build-python-wheel
+	pip install --force-reinstall dist/*.whl
 
 #tests: @ Run all tests
 .PHONY: tests
