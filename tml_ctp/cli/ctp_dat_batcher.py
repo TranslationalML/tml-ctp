@@ -459,12 +459,7 @@ def main():
     ]
     all_patient_folders.sort()
 
-    CTP_folder_list = [
-        dir
-        for dir in os.listdir(CTP_output_folder)
-        if os.path.isdir(os.path.join(CTP_output_folder, dir))
-    ]
-
+    # Create a file to store the mapping between the old and new IDs and the DATEINC values
     CTP_ids_file = os.path.join(
         CTP_output_folder,
         f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
