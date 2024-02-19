@@ -1,4 +1,4 @@
-name: depersonalisation
+name: tml-ctp
 channels:
   - conda-forge
   - defaults

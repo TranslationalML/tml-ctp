@@ -1,0 +1,7 @@
+[run]
+source =
+        tml_ctp
+
+omit =
+        *__init__*
+        tml_ctp/info.py
