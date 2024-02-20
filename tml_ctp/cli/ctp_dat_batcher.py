@@ -376,7 +376,7 @@ def get_parser():
         "--image-tag",
         type=str,
         required=False,
-        default=f"{__container_name__}:{__version__}",
+        default=f"quay.io/translationalml/{__container_name__}:{__version__}",
         help="Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>).",
     )
     parser.add_argument(
