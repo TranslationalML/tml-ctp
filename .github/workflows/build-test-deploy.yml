@@ -95,7 +95,7 @@ jobs:
         #   uses: docker/build-push-action@v5
         #   with:
         #     context: .
-        #     file: ./docker/ctp-anonymizer/Dockerfile
+        #     file: ./docker/tml-ctp-anonymizer/Dockerfile
         #     load: true
         #     tags: ${{ env.TEST_TAG }}
         #     build-args: |
@@ -135,7 +135,7 @@ jobs:
           uses: docker/build-push-action@v5
           with:
             context: .
-            file: ./docker/ctp-anonymizer/Dockerfile
+            file: ./docker/tml-ctp-anonymizer/Dockerfile
             push: true
             tags: ${{ steps.meta.outputs.tags }}
             build-args: |

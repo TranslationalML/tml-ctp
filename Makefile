@@ -48,7 +48,7 @@ VCS_REF = $(shell git rev-parse --short HEAD)
 #build-docker: @ Builds the Docker image
 build-docker:
 	docker build \
-		-f docker/ctp-anonymizer/Dockerfile \
+		-f docker/tml-ctp-anonymizer/Dockerfile \
 		-t $(IMAGE_TAG) \
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
 		--build-arg VCS_REF=$(VCS_REF) \

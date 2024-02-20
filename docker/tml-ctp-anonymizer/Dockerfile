@@ -61,7 +61,7 @@ RUN apt-get remove -y ant git make && \
 RUN mkdir -p scripts && chmod 775 scripts
 
 # Copy the entrypoint script to /app
-COPY docker/ctp-anonymizer/entrypoint_anonymizer.sh .
+COPY docker/tml-ctp-anonymizer/entrypoint_anonymizer.sh .
 
 # Make the entrypoint script executable
 RUN chmod +x entrypoint_anonymizer.sh
