@@ -125,6 +125,7 @@ def run_dat(
     dat_script: str,
     new_patient_id: str = None,
     dateinc: int = None,
+    image_tag: str = f"{__container_name__}:{__version__}",
 ):
     """Run DAT.jar with Docker given the input folder, output folder and DAT script.
 
@@ -134,6 +135,7 @@ def run_dat(
         dat_script (str): Path to the DAT script to be used for anonymization
         new_patient_id (str): New PatientID to use in the DAT script
         dateinc (int): New DATEINC value to use in the DAT script
+        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>)
 
     Returns:
         tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
@@ -150,7 +152,7 @@ def run_dat(
         input_folder=input_folder,
         output_folder=output_folder,
         dat_script=dat_script,
-        image_tag=f"{__container_name__}:{__version__}",
+        image_tag=image_tag,
     )
     # Run the command
     print(f"Running DAT with command: {' '.join(cmd)}")
@@ -371,6 +373,13 @@ def get_parser():
         "If not provided, the script will generate a new day shift randomly.",
     )
     parser.add_argument(
+        "--image-tag",
+        type=str,
+        required=False,
+        default=f"{__container_name__}:{__version__}",
+        help="Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>).",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version=f"{__version__}",
@@ -397,6 +406,8 @@ def main():
     input_folders = args.input_folders
     CTP_output_folder = args.output_folder
     dat_script = args.dat_script
+    image_tag = args.image_tag
+
 
     # Check if the input folder exists
     if not os.path.exists(input_folders):
@@ -492,6 +503,7 @@ def main():
                     dat_script=dat_script,
                     new_patient_id=new_patient_id,
                     dateinc=dateinc,
+                    image_tag=image_tag,
                 )
             except Exception as e:
                 # TODO: see how to handle this error (e.g. break, continue, etc.)
