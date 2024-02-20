@@ -53,10 +53,10 @@ jobs:
             pip install \
               wheel \
               twine \
-              pytest == 7.4 \
-              pytest-cov == 4.1 \
-              pytest-order == 1.2 \
-              pytest-console-scripts == 1.4
+              pytest==7.4 \
+              pytest-cov==4.1 \
+              pytest-order==1.2 \
+              pytest-console-scripts==1.4
 
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
