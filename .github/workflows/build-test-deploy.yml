@@ -91,18 +91,18 @@ jobs:
           with:
             images: ${{ env.IMAGE_NAME }}
 
-        - name: Build Docker image and load it for testing
-          uses: docker/build-push-action@v5
-          with:
-            context: .
-            file: ./docker/ctp-anonymizer/Dockerfile
-            load: true
-            tags: ${{ env.TEST_TAG }}
-            build-args: |
-              VERSION=${{ env.VERSION }}
-              BUILD_DATE=${{ env.BUILD_DATE }}
-              VCS_REF=${{ github.sha }}
-            provenance: false
+        # - name: Build Docker image and load it for testing
+        #   uses: docker/build-push-action@v5
+        #   with:
+        #     context: .
+        #     file: ./docker/ctp-anonymizer/Dockerfile
+        #     load: true
+        #     tags: ${{ env.TEST_TAG }}
+        #     build-args: |
+        #       VERSION=${{ env.VERSION }}
+        #       BUILD_DATE=${{ env.BUILD_DATE }}
+        #       VCS_REF=${{ github.sha }}
+        #     provenance: false
 
         # Build and test the Python package
         - name: Test to build and install the package wheel
