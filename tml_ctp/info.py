@@ -17,5 +17,5 @@
 
 __version__ = "1.0.0"
 __packagename__ = "tml_ctp"
-__container_name__ = "ctp-anonymizer"
+__container_name__ = "tml-ctp-anonymizer"
 __author__ = "TranslationalML team and Contributors"
