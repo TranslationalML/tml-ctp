@@ -121,7 +121,7 @@ jobs:
             TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
             TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
           run: |
-            twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+            twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ dist/*
 
         - name: Deploy Python package to PyPI
           env:
@@ -129,7 +129,7 @@ jobs:
             TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
           if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
           run: |
-            twine upload dist/*
+            twine upload --skip-existing dist/*
 
         - name: Push the Docker image to Quay.io
           uses: docker/build-push-action@v5
