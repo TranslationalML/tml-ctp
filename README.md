@@ -159,7 +159,7 @@ help                           List available make command for this project
 
 ### Manual installation
 
-Manual installation of `TML-CTP` consists of three following steps:
+Manual installation of `TML-CTP` consists of three following steps. In a terminal with Python `3.10` available: 
 
 1. Clone this repository locally:
 
@@ -175,13 +175,13 @@ Manual installation of `TML-CTP` consists of three following steps:
   make build-docker
   ```
 
-3. In a terminal with Python 3.10 available, install the Python package with `pip`:
+3. Install all the Python development environment with `make`:
 
   ```
   make install-python-all
   ```
   
-  This will install:
+  This will install with `pip`:
   - all Python dependencies needed for development (such as `black` for the Python code formatter or `pytest` for the tests)
   - the package `tml_ctp` including its main `ctp_dat_batcher` script and a few other utility scripts
   - all Python dependencies of the package.
@@ -196,6 +196,6 @@ For convenience you can run in a terminal with Python 3.10 available the followi
 make tests
 ```
 
-which will take care of (1) re-building the Docker image if necessary, (2) cleaning the test directories, (3)re-installing the package, and (4) executing the tests with `pytest`.
+which will take care of (1) re-building the Docker image if necessary, (2) cleaning the test directories, (3) re-installing the package with `pip`, and (4) executing the tests with `pytest`.
 
-Code coverage reports in different formats are generated and saved inside the `tests/report` directory.
+At the end, code coverage reports in different formats are generated and saved inside the `tests/report` directory.
