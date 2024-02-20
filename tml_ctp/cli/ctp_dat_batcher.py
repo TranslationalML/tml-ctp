@@ -370,6 +370,11 @@ def get_parser():
         "The old patient ID is the key and the day shift is the value, e.g. {'old_id1': 5, 'old_id2': -3, ...}. "
         "If not provided, the script will generate a new day shift randomly.",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"{__version__}",
+    )
     return parser
 
 
