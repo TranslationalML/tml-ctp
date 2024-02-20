@@ -1,0 +1,132 @@
+name: Build, Test, and Deploy the Docker image and "tml_ctp" package
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/build-test-deploy.yml
+      - .coveragerc
+      - get_container_name.py
+      - get_version.py
+      - Makefile
+      - setup.py
+      - setup.cfg
+      - docker/*
+      - tml_ctp/*
+      - utils/*
+  push:
+    tags:
+      - '[1-9]+.[0-9]+.[0-9]+' # Only deploy on tags with semantic versioning
+      - '[1-9]+.[0-9]+.[0-9]+-[a-z]+' # Only deploy on tags with semantic versioning
+      - 'v[1-9]+.[0-9]+.[0-9]+' # Only deploy on tags with semantic versioning
+      - 'v[1-9]+.[0-9]+.[0-9]+-[a-z]+' # Only deploy on tags with semantic versioning
+    branches:
+      - main
+  release:
+    types: [published]
+
+env:
+    QUAY_SERVER: ${{ secrets.QUAY_SERVER }}
+    QUAY_NAMESPACE: ${{ secrets.QUAY_NAMESPACE }}
+    QUAY_ROBOT_ID: ${{ secrets.QUAY_ROBOT_ID }}
+    QUAY_ROBOT_TOKEN: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+jobs:
+  build-test-deploy-docker:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        # Python / Docker setup and registry login
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.10'
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Login to Quay.io
+          uses: docker/login-action@v3
+          with:
+            registry: ${{ env.QUAY_SERVER }}
+            username: ${{ env.QUAY_ROBOT_ID }}
+            password: ${{ env.QUAY_ROBOT_TOKEN }}
+        
+        # Build the Docker image and test it
+        - name: Extract container name, version, and build date
+          run: |
+            CONTAINER_NAME=$(python get_container_name.py)
+            VERSION=$(python get_version.py)
+            BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            echo "CONTAINER_NAME=$CONTAINER_NAME" >> $GITHUB_ENV
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+        
+        - name: Set image name and test tag
+          run: |
+            IMAGE_NAME=${QUAY_SERVER}/${QUAY_NAMESPACE}/${CONTAINER_NAME}
+            TEST_TAG=${IMAGE_NAME}:${VERSION}-test
+            echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+            echo "TEST_TAG=$TEST_TAG" >> $GITHUB_ENV
+        
+        - name: Docker meta
+          id: meta
+          uses: docker/metadata-action@v5.5.1
+          with:
+            images: ${{ env.IMAGE_NAME }}
+
+        - name: Build Docker image and load it for testing
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            file: ./docker/ctp-anonymizer/Dockerfile
+            load: true
+            tags: ${{ env.TEST_TAG }}
+            build-args: |
+              VERSION=${{ env.VERSION }}
+              BUILD_DATE=${{ env.BUILD_DATE }}
+              VCS_REF=${{ github.sha }}
+            provenance: false
+
+        # Build and test the Python package
+        - name: Test to build and install the package wheel
+          run: |
+            make install-python-wheel
+            # check if the installed script runs
+            tml_ctp_dat_batcher --version
+
+        - name: Run PyTest tests
+          run: |
+            make tests
+        
+        # Deploy the Python package and the Docker image
+        - name: Deploy Python package to TestPyPI for testing first
+          env:
+            TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
+            TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
+          run: |
+            twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+        - name: Deploy Python package to PyPI
+          env:
+            TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+            TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+          run: |
+            twine upload dist/*
+
+        - name: Push the Docker image to Quay.io
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            file: ./docker/ctp-anonymizer/Dockerfile
+            push: true
+            tags: ${{ steps.meta.outputs.tags }}
+            build-args: |
+              VERSION=${{ env.VERSION }}
+              BUILD_DATE=${{ env.BUILD_DATE }}
+              VCS_REF=${{ github.sha }}
+            provenance: false
