@@ -41,7 +41,7 @@ import random
 import uuid
 import pydicom
 
-from tml_ctp.info import __version__
+from tml_ctp.info import __version__, __container_name__
 
 
 def is_windows_platform():
@@ -58,7 +58,12 @@ def run(cmd: list):
     return process
 
 
-def create_docker_dat_command(input_folder: str, output_folder: str, dat_script: str, image_tag: str = f"ctp-anonymizer:{__version__}"):
+def create_docker_dat_command(
+    input_folder: str,
+    output_folder: str,
+    dat_script: str,
+    image_tag: str = f"{__container_name__}:{__version__}",
+):
     """Create the command to run DAT.jar with Docker.
     
     This generates a command to run DAT.jar with Docker in the following format:
@@ -120,6 +125,7 @@ def run_dat(
     dat_script: str,
     new_patient_id: str = None,
     dateinc: int = None,
+    image_tag: str = f"{__container_name__}:{__version__}",
 ):
     """Run DAT.jar with Docker given the input folder, output folder and DAT script.
 
@@ -129,6 +135,7 @@ def run_dat(
         dat_script (str): Path to the DAT script to be used for anonymization
         new_patient_id (str): New PatientID to use in the DAT script
         dateinc (int): New DATEINC value to use in the DAT script
+        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>)
 
     Returns:
         tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
@@ -141,7 +148,12 @@ def run_dat(
         dat_script, new_patient_id=new_patient_id, dateinc=dateinc
     )
     # Create the command to run DAT.jar with Docker
-    cmd = create_docker_dat_command(input_folder, output_folder, dat_script)
+    cmd = create_docker_dat_command(
+        input_folder=input_folder,
+        output_folder=output_folder,
+        dat_script=dat_script,
+        image_tag=image_tag,
+    )
     # Run the command
     print(f"Running DAT with command: {' '.join(cmd)}")
     print("with updated script containing:")
@@ -271,7 +283,9 @@ def rename_ctp_output_subject_folders(CTP_output_folder: str, subject_folder: st
                         ds.StudyTime if hasattr(ds, "StudyTime") else "NoStudyTime"
                     )
                     new_series_number = (
-                        ds.SeriesNumber if hasattr(ds, "SeriesNumber") else "NoSeriesNumber"
+                        ds.SeriesNumber
+                        if hasattr(ds, "SeriesNumber")
+                        else "NoSeriesNumber"
                     )
                     new_series_desc = (
                         ds.SeriesDescription
@@ -280,7 +294,7 @@ def rename_ctp_output_subject_folders(CTP_output_folder: str, subject_folder: st
                     )
                 except Exception as e:
                     raise Exception(f"An error occurred while reading {file_path}: {e}")
-                
+
                 print(f"New PatientID: {new_patient_id}")
                 print(f"New StudyDate: {new_study_date}")
                 print(f"New StudyTime: {new_study_time}")
@@ -358,6 +372,18 @@ def get_parser():
         "The old patient ID is the key and the day shift is the value, e.g. {'old_id1': 5, 'old_id2': -3, ...}. "
         "If not provided, the script will generate a new day shift randomly.",
     )
+    parser.add_argument(
+        "--image-tag",
+        type=str,
+        required=False,
+        default=f"quay.io/translationalml/{__container_name__}:{__version__}",
+        help="Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>).",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"{__version__}",
+    )
     return parser
 
 
@@ -380,6 +406,8 @@ def main():
     input_folders = args.input_folders
     CTP_output_folder = args.output_folder
     dat_script = args.dat_script
+    image_tag = args.image_tag
+
 
     # Check if the input folder exists
     if not os.path.exists(input_folders):
@@ -449,15 +477,9 @@ def main():
     ]
     all_patient_folders.sort()
 
-    CTP_folder_list = [
-        dir
-        for dir in os.listdir(CTP_output_folder)
-        if os.path.isdir(os.path.join(CTP_output_folder, dir))
-    ]
-
+    # Create a file to store the mapping between the old and new IDs and the DATEINC values
     CTP_ids_file = os.path.join(
-        CTP_output_folder,
-        f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
+        CTP_output_folder, f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
     )
     with open(CTP_ids_file, "a") as file:
         for i, folder in enumerate(all_patient_folders):
@@ -481,6 +503,7 @@ def main():
                     dat_script=dat_script,
                     new_patient_id=new_patient_id,
                     dateinc=dateinc,
+                    image_tag=image_tag,
                 )
             except Exception as e:
                 # TODO: see how to handle this error (e.g. break, continue, etc.)
@@ -489,14 +512,11 @@ def main():
             # Rename the subject / session folders in the CTP output to match the new IDs generated by DAT
             rename_ctp_output_subject_folders(CTP_output_folder, folder)
 
-            try:
-                info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
-                file.write(info)
-                file.flush()
-                print(info)
-            except Exception as e:
-                print(f"An error occurred while processing {folder}: {e}")
-                break  # Stop processing further folders should be rested manually
+            # Write the mapping between the old and new IDs and the DATEINC values to the file
+            info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
+            file.write(info)
+            file.flush()
+            print(info)
 
             end_time = time.time()
             elapsed_time = end_time - start_time

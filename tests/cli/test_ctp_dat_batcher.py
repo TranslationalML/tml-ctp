@@ -15,6 +15,7 @@
 """Define tests for the ctp_dat_batcher CLI script."""
 
 import os
+from tml_ctp.info import __container_name__, __version__
 
 
 def test_ctp_dat_batcher_script_basic(script_runner, test_dir, data_dir):
@@ -27,6 +28,8 @@ def test_ctp_dat_batcher_script_basic(script_runner, test_dir, data_dir):
         os.path.join(test_dir, "tmp", "PACSMANCohort-CTP-basic"),
         "-s",
         os.path.join(data_dir, "dat_scripts", "anonymizer.script"),
+        "--image-tag",
+        f"{__container_name__}:{__version__}",
     ]
 
     ret = script_runner.run(cmd)
@@ -51,6 +54,8 @@ def test_ctp_dat_batcher_script_pacsman(script_runner, test_dir, data_dir):
         os.path.join(data_dir, "pacsman-get-pseudonyms", "new_ids_PACSMANCohort.json"),
         "--day-shift",
         os.path.join(data_dir, "pacsman-get-pseudonyms", "day_shift_PACSMANCohort.json"),
+        "--image-tag",
+        f"{__container_name__}:{__version__}",
     ]
 
     ret = script_runner.run(cmd)

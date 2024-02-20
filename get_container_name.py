@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module for storing package metadata."""
+from tml_ctp.info import __container_name__
 
 
-__version__ = "1.0.0.dev4"
-__packagename__ = "tml_ctp"
-__container_name__ = "tml-ctp-anonymizer"
-__author__ = "TranslationalML team and Contributors"
+def main():
+    """Returns the container name of the package."""
+    print(__container_name__)
+    return __container_name__
+
+
+if __name__ == "__main__":
+    main()
