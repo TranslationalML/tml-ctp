@@ -38,11 +38,11 @@ The installation of `TML_CTP` consists of the two following tasks:
   pip install tmp_ctp==1.0.0
   ```
   
-  This will install the main `ctp_dat_batcher` script and a few other utility script among with all Python dependencies.
+  This will install the main `tml_ctp_dat_batcher` script and a few other utility script among with all Python dependencies.
 
 You are ready to use `TML-CTP`!🚀
 
-## How to use `ctp_dat_batcher`
+## How to use `tml_ctp_dat_batcher`
 
 ### Usage
 
@@ -80,7 +80,7 @@ options:
 #### Basic
 
 ```bash
-ctp_dat_batcher \
+tml_ctp_dat_batcher \
   -i /path/to/input/folder \
   -o /path/of/output/folder \
   -s /path/to/dat/script
@@ -132,7 +132,7 @@ where:
 
 ## Removing potentially identifiable DICOMs
 
-After running `ctp_dat_batcher`, you may still need to delete some files that may have burn-in patient data, such as dose reports, or visible face, 
+After running `tml_ctp_dat_batcher`, you may still need to delete some files that may have burn-in patient data, such as dose reports, or visible face, 
 such as T1w MPRAGEs. you can use `delete_identifiable_dicoms.py`. For convenience, a conda environment is provided in `envs/env_dev.yml` that should install all the required dependencies.
 
 ## For Developers
@@ -183,7 +183,7 @@ Manual installation of `TML-CTP` consists of three following steps. In a termina
   
   This will install with `pip`:
   - all Python dependencies needed for development (such as `black` for the Python code formatter or `pytest` for the tests)
-  - the package `tml_ctp` including its main `ctp_dat_batcher` script and a few other utility scripts
+  - the package `tml_ctp` including its main `tml_ctp_dat_batcher` script and a few other utility scripts
   - all Python dependencies of the package.
 
 You are ready to develop `TML-CTP`!🚀
