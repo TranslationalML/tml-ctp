@@ -17,6 +17,7 @@
 """Script to clean tags at all levels in DICOM data."""
 
 import numpy as np
+import pandas as pd
 from os.path import join
 import os
 import pydicom
@@ -246,7 +247,14 @@ def main():
         raise FileNotFoundError(f"{ids_file} is not a file")
 
     # Load the IDs file
-    ids_pairs = np.loadtxt(ids_file, dtype=str)
+    ids_pairs = pd.read_csv(
+        ids_file,
+        delimiter=",",
+        skipinitialspace=True,
+        dtype=str,
+        header=None
+    ).to_numpy(dtype=str)
+    # ids_pairs = np.genfromtxt(ids_file, delimiter=', ', dtype=str)
 
     # [Patch] just to be able to handle single folder cases inside the ids_file
     if not isinstance(ids_pairs[0], np.ndarray):
