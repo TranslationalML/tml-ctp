@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2023, The TranslationalML team and Contributors. All rights reserved.
-#  This software is distributed under the open-source Apache 2.0 license.
+# Copyright 2023-2024 Lausanne University and Lausanne University Hospital, Switzerland & Contributors
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Delete DICOM files that could lead to identifying the patient."""
 
@@ -135,7 +146,7 @@ def delete_identifiable_dicom_file(
 
 
 def sanitize_all_dicoms_within_root_folder(
-    datapath: str = os.path.join(".", "data"),
+    datapath: str,
     pattern_dicom_files: str = os.path.join("ses-*", "*", "*"),
     delete_T1w: bool = False,
     delete_T2w: bool = False,
@@ -144,8 +155,8 @@ def sanitize_all_dicoms_within_root_folder(
 
     Args :
         datapath (str): The path to the dicom images.
-        pattern_dicom_files (str): the (generic) path to the dicom images starting from the patient folder. In a PACSMAN dump, this would reflect e.g.
-            ses-20170115/0002-MPRAGE/*.dcm
+        pattern_dicom_files (str): the (generic) path to the dicom images starting from the patient folder.
+                                   In a PACSMAN dump, this would reflect e.g. ses-20170115/0002-MPRAGE/*.dcm
         delete_T1w (bool): delete T1-weighted images that could be used to identify the patients
         delete_T2w (bool): delete T2-weighted images that could be used to identify the patients
 
@@ -218,12 +229,13 @@ def sanitize_all_dicoms_within_root_folder(
 
 def get_parser():
     """Get parser object for script delete_identifiable_dicoms.py."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Delete DICOM files that could lead to identifying the patient."
+    )
     parser.add_argument(
         "--in_folder",
         "-d",
         help="Root dir to the dicom files to be screened for identifiables files.",
-        default=os.path.join(".", "data"),
         required=True,
     )
     parser.add_argument(
@@ -237,7 +249,7 @@ def get_parser():
     parser.add_argument(
         "--delete_T2w",
         "-t2w",
-        help="Delete potentially identifiable T1-weighted images such as FLAIR",
+        help="Delete potentially identifiable T2-weighted images such as FLAIR",
         default=False,
         required=False,
         action="store_true",
