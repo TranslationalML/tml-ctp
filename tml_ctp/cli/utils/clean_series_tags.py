@@ -77,20 +77,20 @@ def get_dangerous_tag_pairs(original_subject_folder: str, ctp_subject_folder: st
     list_issues = []
     if sensible_tag_pairs == []:
         try:
-            original_patientID = original_ref_image.PatientID
+            _ = original_ref_image.PatientID
         except:
             list_issues.append("original_ref_image.PatientID")
         try:
-            ctp_patientID = ctp_ref_image.PatientID
+            _ = ctp_ref_image.PatientID
         except:
             list_issues.append("ctp_ref_image.PatientID")
 
         try:
-            original_SeriesDate = original_ref_image.SeriesDate
+            _ = original_ref_image.SeriesDate
         except:
             list_issues.append("original_ref_image.SeriesDate")
         try:
-            ctp_SeriesDate = ctp_ref_image.SeriesDate
+            _ = ctp_ref_image.SeriesDate
         except:
             list_issues.append("ctp_ref_image.SeriesDate")
 
