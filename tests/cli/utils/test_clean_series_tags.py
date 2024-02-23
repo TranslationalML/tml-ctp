@@ -14,7 +14,6 @@
 
 """Define tests for the clean_series_tags CLI script."""
 
-import sys
 import os
 import shutil
 import glob
