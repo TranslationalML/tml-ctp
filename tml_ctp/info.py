@@ -15,7 +15,7 @@
 """Module for storing package metadata."""
 
 
-__version__ = "1.0.0.dev4"
+__version__ = "1.0.0"
 __packagename__ = "tml_ctp"
 __container_name__ = "tml-ctp-anonymizer"
 __author__ = "TranslationalML team and Contributors"
