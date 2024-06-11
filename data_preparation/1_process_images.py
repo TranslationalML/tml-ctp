@@ -106,10 +106,8 @@ def main():
         s1.append((s,file_arc,dest_processed,output))
 
     #remove all tmp_ folder
-    folders_rm = [f.path for f in os.scandir(output) if f.is_dir() and 'tmp_' in f.name]
-    for fld in folders_rm:
-        print(f"removing folder: {fld}")
-        shutil.rmtree(fld)
+    print(f"removing folder like : {output}/tmp_*")
+    os.system(f'rm -rf {output}/tmp_*')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=nbThread) as executor:
        for _ in executor.map(worker, s1):
