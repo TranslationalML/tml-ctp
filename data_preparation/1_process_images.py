@@ -50,6 +50,7 @@ def worker(args):
    file_arc = args[1]
    dest_processed = args[2]
    output = args[3]
+   id = args[4]
 
    tmpname = random_with_N_digits(8)
    tmpname = int(tmpname)
@@ -64,16 +65,19 @@ def worker(args):
    copy_tree(d, dd)
    print("Anonymise")
    cmd=f'tml_ctp_dat_batcher -i {d1}/src -o {d1}/dep/ -s /data/git-src/tml-ctp/dat_scripts/DicomAnonymizer_Whitelist_extended.script --new-ids /data/extraction/dsrsd-1183/new_ids_PACS-MOLIS.json --day-shift /data/extraction/dsrsd-1183/day_shift_PACS-MOLIS.json > {d1}{sub}.log'
-   print(cmd)
+   print(f'{id} -- {cmd}')
    result=os.system(cmd)
    if result == 0:
       print("Deperso ok")
       #move log
       shutil.move(f"{d1}{sub}.log", f"{output}/{sub}.log")
       #move depersonalisation
-      if os.system(f"rsync -azh --remove-source-files {d1}/dep/* {output}/.")==0:
+      cmd2= f"rsync -azh --remove-source-files {d1}/dep/* {output}/."
+      print(f'{id} -- {cmd2}')
+      if os.system(cmd2)==0:
          #async pb?
          #shutil.rmtree(d1)
+         print(f"{id} -- mv {d} {dest_processed}/")
          os.system(f"mv {d} {dest_processed}/")
       else:
          print(f"Error on copying result from {d1}/dep/* to {output}/.")
@@ -103,8 +107,10 @@ def main():
         os.makedirs(dest_processed)
 
     s1 = []
+    count=1
     for s in subfolders:
-        s1.append((s,file_arc,dest_processed,output))
+        s1.append((s,file_arc,dest_processed,output,count))
+        count = count + 1
 
     #remove all tmp_ folder
     print(f"removing folder like : {output}/tmp_*")
@@ -118,8 +124,8 @@ def main():
        executor.shutdown(wait=True)
        print("download and sort finished")
 
-    print(f"removing folder like : {output}/tmp_*")
-    os.system(f'rm -rf {output}/tmp_*')
+    #print(f"removing folder like : {output}/tmp_*")
+    #os.system(f'rm -rf {output}/tmp_*')
 
     print("finished")
 
