@@ -72,7 +72,8 @@ def worker(args):
       shutil.move(f"{d1}{sub}.log", f"{output}/{sub}.log")
       #move depersonalisation
       if os.system(f"rsync -azh --remove-source-files {d1}/dep/* {output}/.")==0:
-         shutil.rmtree(d1)
+         #async pb?
+         #shutil.rmtree(d1)
          os.system(f"mv {d} {dest_processed}/")
       else:
          print(f"Error on copying result from {d1}/dep/* to {output}/.")
@@ -116,6 +117,9 @@ def main():
        # shutdown the pool, returns after all scheduled and running tasks complete
        executor.shutdown(wait=True)
        print("download and sort finished")
+
+    print(f"removing folder like : {output}/tmp_*")
+    os.system(f'rm -rf {output}/tmp_*')
 
     print("finished")
 
