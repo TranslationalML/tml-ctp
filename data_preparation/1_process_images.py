@@ -51,20 +51,23 @@ def worker(args):
    dest_processed = args[2]
    output = args[3]
    id = args[4]
+   script_dep='/data/git-src/tml-ctp/dat_scripts/DicomAnonymizer_Whitelist_extended.script'
 
    tmpname = random_with_N_digits(8)
    tmpname = int(tmpname)
    sub=d.replace(file_arc,'')
    d1=f'{output}/tmp_{tmpname}'
    dd=f'{d1}/src{sub}'
+   deperso = f'{d1}/DicomAnonymizer_Whitelist_extended.script'
    print(dd)
    if os.path.exists(dd):
       shutil.rmtree(dd)
    os.makedirs(dd)
    print("Copying file")
    copy_tree(d, dd)
+   shutil.copyfile(script_dep, deperso)
    print("Anonymise")
-   cmd=f'tml_ctp_dat_batcher -i {d1}/src -o {d1}/dep/ -s /data/git-src/tml-ctp/dat_scripts/DicomAnonymizer_Whitelist_extended.script --new-ids /data/extraction/dsrsd-1183/new_ids_PACS-MOLIS.json --day-shift /data/extraction/dsrsd-1183/day_shift_PACS-MOLIS.json > {d1}{sub}.log'
+   cmd=f'tml_ctp_dat_batcher -i {d1}/src -o {d1}/dep/ -s {deperso} --new-ids /data/extraction/dsrsd-1183/new_ids_PACS-MOLIS.json --day-shift /data/extraction/dsrsd-1183/day_shift_PACS-MOLIS.json > {d1}{sub}.log'
    print(f'{id} -- {cmd}')
    result=os.system(cmd)
    if result == 0:
