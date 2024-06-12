@@ -30,6 +30,20 @@ def get_process_images_parser():
         help="Specify an output directory to save the file"
     )
     parser.add_argument(
+        "-i",
+        "--id-code",
+        type=str,
+        required=True,
+        help="The json file containing the id coded references"
+    )
+    parser.add_argument(
+        "-d",
+        "--day-shift",
+        type=str,
+        required=True,
+        help="The json file containing the day shift for each id"
+    )
+    parser.add_argument(
         "-t",
         "--thread",
         type=int,
@@ -51,6 +65,8 @@ def worker(args):
    dest_processed = args[2]
    output = args[3]
    id = args[4]
+   id_code = args[5]
+   day_shift = args[6]
    script_dep='/data/git-src/tml-ctp/dat_scripts/DicomAnonymizer_Whitelist_extended.script'
 
    tmpname = random_with_N_digits(8)
@@ -67,7 +83,7 @@ def worker(args):
    copy_tree(d, dd)
    shutil.copyfile(script_dep, deperso)
    print("Anonymise")
-   cmd=f'tml_ctp_dat_batcher -i {d1}/src -o {d1}/dep/ -s {deperso} --new-ids /data/extraction/dsrsd-1183/new_ids_PACS-MOLIS.json --day-shift /data/extraction/dsrsd-1183/day_shift_PACS-MOLIS.json > {d1}{sub}.log'
+   cmd=f'tml_ctp_dat_batcher -i {d1}/src -o {d1}/dep/ -s {deperso} --new-ids {id_code} --day-shift {day_shift} > {d1}{sub}.log'
    print(f'{id} -- {cmd}')
    result=os.system(cmd)
    if result == 0:
@@ -79,7 +95,7 @@ def worker(args):
       print(f'{id} -- {cmd2}')
       if os.system(cmd2)==0:
          #async pb?
-         #shutil.rmtree(d1)
+         shutil.rmtree(d1)
          print(f"{id} -- mv {d} {dest_processed}/")
          os.system(f"mv {d} {dest_processed}/")
       else:
@@ -94,6 +110,8 @@ def main():
     output = os.path.abspath(args.output)
     #'/data/extraction/dsrsd-1183/CLM_DSR/PRE_CTP_arben_7'
     nbThread = args.thread
+    id_code = args.id_code
+    day_shift = args.day_shift
     dest_processed = file_arc + "_processed"
 
     if not os.path.exists(output):
@@ -112,7 +130,7 @@ def main():
     s1 = []
     count=1
     for s in subfolders:
-        s1.append((s,file_arc,dest_processed,output,count))
+        s1.append((s,file_arc,dest_processed,output,count, id_code, day_shift))
         count = count + 1
 
     #remove all tmp_ folder
