@@ -40,6 +40,7 @@ import subprocess
 import random
 import uuid
 import pydicom
+from pathlib import Path
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -387,6 +388,67 @@ def get_parser():
     return parser
 
 
+def check_and_rename_dicom_files(dicom_folder: str, newname: str) -> str:
+    """Check if any DICOM filename contains the patient name and, if found, create a copy of the entire folder with anonymized filenames.
+
+    This function scans through the specified folder containing DICOM files to detect any filenames that include the patient name.
+    If such filenames are found, it renames these files by replacing the patient name with a new anonymized name and copies the entire folder structure to a new location with these updated filenames.
+
+    Args:
+        dicom_folder (str): Path to the folder containing DICOM files.
+        newname (str): New patient name to replace the old one in the filenames.
+
+    Returns:
+        str: Path to the new folder if any file was renamed, otherwise the original folder path.
+    """
+    dicom_folder_path = Path(dicom_folder)
+    parent_folder = dicom_folder_path.parent
+    new_folder = parent_folder / f"{dicom_folder_path.name}-names-removed"
+    any_renamed = False
+    old_patient_name = ""
+
+    # First pass to check if any file contains the patient name
+    for root, _, files in os.walk(dicom_folder):
+        for file in files:
+            if file.endswith(".dcm"):
+                file_path = Path(root) / file
+                try:
+                    ds = pydicom.dcmread(file_path)
+                    old_patient_name = str(ds.PatientName).lower()
+                    if old_patient_name in file.lower():
+                        any_renamed = True
+                        break
+                except Exception as e:
+                    print(f"An error occurred while processing {file_path}: {e}")
+        if any_renamed:
+            break
+
+    # If any file contains the patient name, proceed with renaming and copying
+    if any_renamed:
+        for root, _, files in os.walk(dicom_folder):
+            for file in files:
+                if file.endswith(".dcm"):
+                    file_path = Path(root) / file
+                    try:
+                        relative_path = file_path.relative_to(dicom_folder_path)
+                        new_root = new_folder / relative_path.parent
+                        new_root.mkdir(parents=True, exist_ok=True)
+                        new_file_path = new_root / file
+                        old_patient_name = str(ds.PatientName).lower()
+                        if old_patient_name in file.lower():
+                            new_filename = file.lower().replace(old_patient_name, newname.lower())
+                            new_file_path = new_root / new_filename
+
+                        if not new_file_path.exists():
+                            shutil.copy(file_path, new_file_path)
+                            print(f"File copied: {new_file_path}")
+                    except Exception as e:
+                        print(f"An error occurred while processing {file_path}: {e}")
+        return str(new_folder)
+    else:
+        return dicom_folder
+
+
 def main():
     """Main function of the `ctp_dat_batcher` script which anonymize DICOM files.
 
@@ -407,7 +469,6 @@ def main():
     CTP_output_folder = args.output_folder
     dat_script = args.dat_script
     image_tag = args.image_tag
-
 
     # Check if the input folder exists
     if not os.path.exists(input_folders):
@@ -469,6 +530,9 @@ def main():
     else:
         day_shifts = None
 
+    # Check if any DICOM file contains the patient name; if found, create an anonymized copy in a new folder
+    input_folders = check_and_rename_dicom_files(input_folders, "NONAME")
+
     # Get the list of all patient folders
     all_patient_folders = [
         dir
@@ -494,7 +558,6 @@ def main():
                 dateinc = day_shifts[folder]
             else:
                 dateinc = None
-
             try:
                 os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
                 (new_patient_id, _, dateinc) = run_dat(
