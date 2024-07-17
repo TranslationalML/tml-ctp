@@ -40,6 +40,9 @@ import subprocess
 import random
 import uuid
 import pydicom
+import tempfile
+from random import randint
+from typing import Tuple
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -65,9 +68,9 @@ def create_docker_dat_command(
     image_tag: str = f"{__container_name__}:{__version__}",
 ):
     """Create the command to run DAT.jar with Docker.
-    
+
     This generates a command to run DAT.jar with Docker in the following format:
-    
+
         docker run --rm \
             -u <user_id>:<group_id> \
             -v <input_folder>:/input \
@@ -83,7 +86,7 @@ def create_docker_dat_command(
         output_folder (str): Path to the folder where the anonymized files will be saved
         dat_script (str): Path to the DAT script to be used for anonymization
         image_tag (str): Tag of the Docker image to use for running DAT.jar (default: ctp-anonymizer:<version>)
-    
+
     Returns:
         list: The command to run DAT.jar with Docker
 
@@ -123,6 +126,7 @@ def run_dat(
     input_folder: str,
     output_folder: str,
     dat_script: str,
+    temp_dir: str,
     new_patient_id: str = None,
     dateinc: int = None,
     image_tag: str = f"{__container_name__}:{__version__}",
@@ -130,28 +134,29 @@ def run_dat(
     """Run DAT.jar with Docker given the input folder, output folder and DAT script.
 
     Args:
-        input_folder (str): Path to the folder of files to be anonymized
-        output_folder (str): Path to the folder where the anonymized files will be saved
-        dat_script (str): Path to the DAT script to be used for anonymization
-        new_patient_id (str): New PatientID to use in the DAT script
-        dateinc (int): New DATEINC value to use in the DAT script
-        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>)
+        input_folder (str): Path to the folder of files to be anonymized.
+        output_folder (str): Path to the folder where the anonymized files will be saved.
+        dat_script (str): Path to the DAT script to be used for anonymization.
+        temp_dir (str): Path to the temporary directory.
+        new_patient_id (str): New PatientID to use in the DAT script.
+        dateinc (int): New DATEINC value to use in the DAT script.
+        image_tag (str): Tag of the Docker image to use for running DAT.jar (default: tml-ctp-anonymizer:<version>).
 
     Returns:
-        tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
+        tuple: Tuple containing the new PatientID, PatientName, DATEINC values, and the path to the modified DAT script.
 
     Raises:
-        Exception: If the Docker run command fails with a non-zero return code
+        Exception: If the Docker run command fails with a non-zero return code.
     """
     # Update the DAT script with new PatientID, PatientName and DATEINC values
-    (new_patient_id, new_patient_name, dateinc) = update_dat_script_file(
-        dat_script, new_patient_id=new_patient_id, dateinc=dateinc
+    (new_patient_id, new_patient_name, dateinc, updated_dat_script) = update_dat_script_file(
+        dat_script, temp_dir, new_patient_id=new_patient_id, dateinc=dateinc
     )
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
         output_folder=output_folder,
-        dat_script=dat_script,
+        dat_script=updated_dat_script,
         image_tag=image_tag,
     )
     # Run the command
@@ -170,30 +175,40 @@ def run_dat(
 
 
 def update_dat_script_file(
-    original_dat_script: str, new_patient_id: str = None, dateinc: int = None
-):
+    original_dat_script: str, temp_dir: str, new_patient_id: str = None, dateinc: int = None
+) -> Tuple[str, str, int, str]:
     """Update the DAT script with a new DATEINC value, a new PatientID, and new random UUID for PatientName.
 
     If `new_patient_id` is `None`, a new random UUID for the PatientID is generated.
     If `dateinc` is `None`, a new random DATEINC value is generated between -30 and 30.
 
-    Note that this function assumes that the DATEINC is always at the second line of the DAT script.
-    Moreover, the original DAT script is modified in place and the new DATEINC value is returned.
+    This function assumes that the DATEINC is always at the second line of the DAT script.
+    The original DAT script is copied to a new script with a random number appended to the name,
+    and the modifications are applied to this new script.
 
     If the PatientID line or the PatientName line does not exist, they are appended to the end of the file.
 
     Args:
-        original_dat_script (str): Path to the original DAT script
-        new_patient_id (str): New PatientID to use in the DAT script
-        dateinc (int): New DATEINC value to use in the DAT script
+        original_dat_script (str): Path to the original DAT script.
+        temp_dir (str): Path to a temporary directory where to store the copy of the DAT script.
+        new_patient_id (str): New PatientID to use in the DAT script.
+        dateinc (int): New DATEINC value to use in the DAT script.
 
     Returns:
-        tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
+        tuple: Tuple containing the new PatientID, PatientName, DATEINC values, and the path to the modified DAT script.
 
     Raises:
-        ValueError: If the DATEINC is not found in the second line of the DAT script
+        ValueError: If the DATEINC is not found in the second line of the DAT script.
     """
-    with open(original_dat_script, "r") as f:
+    # Generate a random number for the new script name
+    random_suffix = random_with_N_digits(8)
+    new_dat_script = os.path.join(temp_dir, f"anonymizer_{random_suffix}.script")
+
+    # Copy the original script to the new script with the random suffix
+    shutil.copyfile(original_dat_script, new_dat_script)
+
+    # Read the lines from the new script file
+    with open(new_dat_script, "r") as f:
         lines = f.readlines()
 
     # Assuming the DATEINC is always at the second line
@@ -234,14 +249,15 @@ def update_dat_script_file(
         # If the PatientName line does not exist, append it to the end
         lines.append(f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
 
-    with open(original_dat_script, "w") as f:
+    with open(new_dat_script, "w") as f:
         f.writelines(lines)
 
     return (
         new_patient_id,
         new_patient_name,
         dateinc,
-    )  # Return the generated values as a tuple
+        new_dat_script,
+    )  # Return the generated values and the path to the new script as a tuple
 
 
 def rename_ctp_output_subject_folders(CTP_output_folder: str, subject_folder: str):
@@ -387,6 +403,35 @@ def get_parser():
     return parser
 
 
+def random_with_N_digits(n: int) -> int:
+    """Generate a random number with exactly N digits.
+
+    This function generates a random integer with the specified number of digits.
+    For example, if `n` is 3, the function will return a number between 100 and 999.
+
+    Args:
+        n (int): The number of digits for the random number.
+
+    Returns:
+        int: A random integer with exactly `n` digits.
+
+    Raises:
+        ValueError: If `n` is less than 1.
+
+    Examples:
+        >>> random_with_N_digits(3)
+        472
+        >>> random_with_N_digits(5)
+        19485
+    """
+    if n < 1:
+        raise ValueError("Number of digits must be at least 1")
+
+    range_start = 10**(n - 1)
+    range_end = (10**n) - 1
+    return randint(range_start, range_end)
+
+
 def main():
     """Main function of the `ctp_dat_batcher` script which anonymize DICOM files.
 
@@ -408,121 +453,130 @@ def main():
     dat_script = args.dat_script
     image_tag = args.image_tag
 
+    # Create the temporary directory
+    temp_dir = tempfile.mkdtemp(prefix="ctp_anonymizer_scripts_")
 
-    # Check if the input folder exists
-    if not os.path.exists(input_folders):
-        print(
-            f"ERROR: The input folder {input_folders} does not exist. Please check the path!"
-        )
-        sys.exit(1)
+    try:
+        # Check if the input folder exists
+        if not os.path.exists(input_folders):
+            print(
+                f"ERROR: The input folder {input_folders} does not exist. Please check the path!"
+            )
+            sys.exit(1)
 
-    # Check if the DAT script exists
-    if not os.path.exists(dat_script):
-        print(
-            f"ERROR: The DAT script {dat_script} does not exist. Please check the path!"
-        )
-        sys.exit(1)
+        # Check if the DAT script exists
+        if not os.path.exists(dat_script):
+            print(
+                f"ERROR: The DAT script {dat_script} does not exist. Please check the path!"
+            )
+            sys.exit(1)
 
-    # Check if the new IDs file exists
-    if args.new_ids is not None and not os.path.exists(args.new_ids):
-        print(
-            f"ERROR: The new IDs file {args.new_ids} does not exist. Please check the path!"
-        )
-        sys.exit(1)
+        # Check if the new IDs file exists
+        if args.new_ids is not None and not os.path.exists(args.new_ids):
+            print(
+                f"ERROR: The new IDs file {args.new_ids} does not exist. Please check the path!"
+            )
+            sys.exit(1)
 
-    # Check if the day shifts file exists
-    if args.day_shift is not None and not os.path.exists(args.day_shift):
-        print(
-            f"ERROR: The day shifts file {args.day_shift} does not exist. Please check the path!"
-        )
-        sys.exit(1)
+        # Check if the day shifts file exists
+        if args.day_shift is not None and not os.path.exists(args.day_shift):
+            print(
+                f"ERROR: The day shifts file {args.day_shift} does not exist. Please check the path!"
+            )
+            sys.exit(1)
 
-    # Create the output folder if it does not exist
-    os.makedirs(CTP_output_folder, exist_ok=True)
+        # Create the output folder if it does not exist
+        os.makedirs(CTP_output_folder, exist_ok=True)
 
-    # Load the new patient IDs from the JSON file
-    if args.new_ids is not None:
-        with open(args.new_ids, "r") as file:
-            try:
-                new_patient_ids = json.load(file)
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while loading the new IDs file: {e}")
-                sys.exit(1)
-    else:
-        new_patient_ids = None
-
-    # Load the day shifts from the JSON file
-    if args.day_shift is not None:
-        with open(args.day_shift, "r") as file:
-            try:
-                day_shifts = json.load(file)
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while loading the day shifts file: {e}")
-                sys.exit(1)
-            # Check that the day shifts are integers
-            for k, v in day_shifts.items():
-                if not isinstance(v, int):
-                    print(
-                        f"ERROR: The day shift for patient {k} is not an integer. Please check the file!"
-                    )
+        # Load the new patient IDs from the JSON file
+        if args.new_ids is not None:
+            with open(args.new_ids, "r") as file:
+                try:
+                    new_patient_ids = json.load(file)
+                except json.JSONDecodeError as e:
+                    print(f"An error occurred while loading the new IDs file: {e}")
                     sys.exit(1)
-    else:
-        day_shifts = None
+        else:
+            new_patient_ids = None
 
-    # Get the list of all patient folders
-    all_patient_folders = [
-        dir
-        for dir in os.listdir(input_folders)
-        if os.path.isdir(os.path.join(input_folders, dir))
-    ]
-    all_patient_folders.sort()
+        # Load the day shifts from the JSON file
+        if args.day_shift is not None:
+            with open(args.day_shift, "r") as file:
+                try:
+                    day_shifts = json.load(file)
+                except json.JSONDecodeError as e:
+                    print(f"An error occurred while loading the day shifts file: {e}")
+                    sys.exit(1)
+                # Check that the day shifts are integers
+                for k, v in day_shifts.items():
+                    if not isinstance(v, int):
+                        print(
+                            f"ERROR: The day shift for patient {k} is not an integer. Please check the file!"
+                        )
+                        sys.exit(1)
+        else:
+            day_shifts = None
 
-    # Create a file to store the mapping between the old and new IDs and the DATEINC values
-    CTP_ids_file = os.path.join(
-        CTP_output_folder, f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
-    )
-    with open(CTP_ids_file, "a") as file:
-        for i, folder in enumerate(all_patient_folders):
-            print(f"Processing {folder} [{i+1}/{len(all_patient_folders)}]")
+        # Get the list of all patient folders
+        all_patient_folders = [
+            dir
+            for dir in os.listdir(input_folders)
+            if os.path.isdir(os.path.join(input_folders, dir))
+        ]
+        all_patient_folders.sort()
 
-            if new_patient_ids is not None:
-                new_patient_id = new_patient_ids[folder]
-            else:
-                new_patient_id = None
+        # Create a file to store the mapping between the old and new IDs and the DATEINC values
+        CTP_ids_file = os.path.join(
+            CTP_output_folder, f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
+        )
+        with open(CTP_ids_file, "a") as file:
+            for i, folder in enumerate(all_patient_folders):
+                print(f"Processing {folder} [{i+1}/{len(all_patient_folders)}]")
 
-            if day_shifts is not None:
-                dateinc = day_shifts[folder]
-            else:
-                dateinc = None
+                if new_patient_ids is not None:
+                    new_patient_id = new_patient_ids[folder]
+                else:
+                    new_patient_id = None
 
-            try:
-                os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
-                (new_patient_id, _, dateinc) = run_dat(
-                    input_folder=os.path.join(input_folders, folder),
-                    output_folder=os.path.join(CTP_output_folder, folder),
-                    dat_script=dat_script,
-                    new_patient_id=new_patient_id,
-                    dateinc=dateinc,
-                    image_tag=image_tag,
-                )
-            except Exception as e:
-                # TODO: see how to handle this error (e.g. break, continue, etc.)
-                print(f"An error occurred while processing {folder}: {e}")
+                if day_shifts is not None:
+                    dateinc = day_shifts[folder]
+                else:
+                    dateinc = None
 
-            # Rename the subject / session folders in the CTP output to match the new IDs generated by DAT
-            rename_ctp_output_subject_folders(CTP_output_folder, folder)
+                try:
+                    os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
+                    (new_patient_id, _, dateinc) = run_dat(
+                        input_folder=os.path.join(input_folders, folder),
+                        output_folder=os.path.join(CTP_output_folder, folder),
+                        dat_script=dat_script,
+                        temp_dir=temp_dir,  # Pass the temporary directory
+                        new_patient_id=new_patient_id,
+                        dateinc=dateinc,
+                        image_tag=image_tag,
+                    )
+                except Exception as e:
+                    # TODO: see how to handle this error (e.g. break, continue, etc.)
+                    print(f"An error occurred while processing {folder}: {e}")
 
-            # Write the mapping between the old and new IDs and the DATEINC values to the file
-            info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
-            file.write(info)
-            file.flush()
-            print(info)
+                # Rename the subject / session folders in the CTP output to match the new IDs generated by DAT
+                rename_ctp_output_subject_folders(CTP_output_folder, folder)
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            expected_time_per_iteration = elapsed_time / (i + 1)
-            expected_total_time = expected_time_per_iteration * len(all_patient_folders)
-            print(f"Expected total time: {expected_total_time} seconds")
+                # Write the mapping between the old and new IDs and the DATEINC values to the file
+                info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
+                file.write(info)
+                file.flush()
+                print(info)
+
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                expected_time_per_iteration = elapsed_time / (i + 1)
+                expected_total_time = expected_time_per_iteration * len(all_patient_folders)
+                print(f"Expected total time: {expected_total_time} seconds")
+
+    finally:
+        # Cleanup the temporary directory
+        shutil.rmtree(temp_dir)
+        print(f"Temporary directory {temp_dir} removed.")
 
 
 if __name__ == "__main__":
