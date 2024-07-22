@@ -40,7 +40,9 @@ import subprocess
 import random
 import uuid
 import pydicom
+import numpy as np
 from pathlib import Path
+from pydicom.uid import generate_uid
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -66,9 +68,9 @@ def create_docker_dat_command(
     image_tag: str = f"{__container_name__}:{__version__}",
 ):
     """Create the command to run DAT.jar with Docker.
-    
+
     This generates a command to run DAT.jar with Docker in the following format:
-    
+
         docker run --rm \
             -u <user_id>:<group_id> \
             -v <input_folder>:/input \
@@ -84,7 +86,7 @@ def create_docker_dat_command(
         output_folder (str): Path to the folder where the anonymized files will be saved
         dat_script (str): Path to the DAT script to be used for anonymization
         image_tag (str): Tag of the Docker image to use for running DAT.jar (default: ctp-anonymizer:<version>)
-    
+
     Returns:
         list: The command to run DAT.jar with Docker
 
@@ -148,6 +150,7 @@ def run_dat(
     (new_patient_id, new_patient_name, dateinc) = update_dat_script_file(
         dat_script, new_patient_id=new_patient_id, dateinc=dateinc
     )
+    input_folder = check_and_rename_dicom_files(input_folder, new_patient_id)
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
@@ -388,7 +391,7 @@ def get_parser():
     return parser
 
 
-def check_and_rename_dicom_files(dicom_folder: str, newname: str) -> str:
+def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
     """Check if any DICOM filename contains the patient name and, if found, create a copy of the entire folder with anonymized filenames.
 
     This function scans through the specified folder containing DICOM files to detect any filenames that include the patient name.
@@ -396,57 +399,110 @@ def check_and_rename_dicom_files(dicom_folder: str, newname: str) -> str:
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
-        newname (str): New patient name to replace the old one in the filenames.
+        new_patientid (str): New patient name to replace the old one in the filenames.
 
     Returns:
         str: Path to the new folder if any file was renamed, otherwise the original folder path.
     """
-    dicom_folder_path = Path(dicom_folder)
+    dicom_folder_path = Path(dicom_folder).parent
     parent_folder = dicom_folder_path.parent
-    new_folder = parent_folder / f"{dicom_folder_path.name}-names-removed"
+    new_folder = parent_folder / f"{dicom_folder_path.name}_anonymized"
     any_renamed = False
     old_patient_name = ""
 
-    # First pass to check if any file contains the patient name
+    # Gather all DICOM file paths
+    file_paths = []
     for root, _, files in os.walk(dicom_folder):
         for file in files:
             if file.endswith(".dcm"):
-                file_path = Path(root) / file
-                try:
-                    ds = pydicom.dcmread(file_path)
-                    old_patient_name = str(ds.PatientName).lower()
-                    if old_patient_name in file.lower():
-                        any_renamed = True
-                        break
-                except Exception as e:
-                    print(f"An error occurred while processing {file_path}: {e}")
-        if any_renamed:
-            break
+                file_paths.append(Path(root) / file)
+
+    # First pass to check if any file contains the patient name
+    for file_path in file_paths:
+        try:
+            ds = pydicom.dcmread(file_path)
+            old_patient_name = str(ds.PatientName).lower()
+            if old_patient_name in file_path.name.lower():
+                any_renamed = True
+                break
+        except Exception as e:
+            print(f"An error occurred while processing {file_path}: {e}")
 
     # If any file contains the patient name, proceed with renaming and copying
     if any_renamed:
-        for root, _, files in os.walk(dicom_folder):
-            for file in files:
-                if file.endswith(".dcm"):
-                    file_path = Path(root) / file
-                    try:
-                        relative_path = file_path.relative_to(dicom_folder_path)
-                        new_root = new_folder / relative_path.parent
-                        new_root.mkdir(parents=True, exist_ok=True)
-                        new_file_path = new_root / file
-                        old_patient_name = str(ds.PatientName).lower()
-                        if old_patient_name in file.lower():
-                            new_filename = file.lower().replace(old_patient_name, newname.lower())
-                            new_file_path = new_root / new_filename
+        # Generate new UID
+        if new_patientid is None:
+            new_patientid = generate_uid()
+        # Sort the file paths to have the right slice order
+        sorted_file_paths, warning_text = get_sorted_image_files(file_paths)
 
-                        if not new_file_path.exists():
-                            shutil.copy(file_path, new_file_path)
-                            print(f"File copied: {new_file_path}")
-                    except Exception as e:
-                        print(f"An error occurred while processing {file_path}: {e}")
+        for index, file_path in enumerate(sorted_file_paths, start=0):
+            try:
+                ds = pydicom.dcmread(file_path)
+
+                # Prepare new filename
+                new_filename = f"{new_patientid}.slice{index}.dcm"
+
+                # Copy file to new folder with new name
+                relative_path = file_path.relative_to(dicom_folder_path)
+                new_root = new_folder / relative_path.parent
+                new_root.mkdir(parents=True, exist_ok=True)
+                new_file_path = new_root / new_filename
+
+                shutil.copy(file_path, new_file_path)
+                print(f"File copied:{new_file_path}")
+
+            except Exception as e:
+                print(f"An error occurred while processing {file_path}: {e}")
+
         return str(new_folder)
     else:
         return dicom_folder
+
+
+def get_sorted_image_files(file_paths, epsilon=0.01):
+    """Sort DICOM image files in increasing slice order (IS direction) corresponding to a series.
+
+    Args:
+        file_paths (list): List of file paths to DICOM files.
+        epsilon (float): Maximum difference in distance between slices to consider spacing uniform.
+
+    Returns:
+        list: Sorted file paths.
+        str: Warning text if any issues are found.
+    """
+    warning_text = 'No DICOM files found to sort.'
+    if len(file_paths) == 0:
+        return file_paths, warning_text
+
+    # Use the first file to get reference orientation and position
+    ref_file = file_paths[0]
+    ds = pydicom.dcmread(ref_file)
+    ref_position = np.array([float(x) for x in ds.ImagePositionPatient])
+    ref_orientation = np.array([float(x) for x in ds.ImageOrientationPatient])
+
+    # Determine out-of-plane direction for the first slice
+    x = ref_orientation[:3]
+    y = ref_orientation[3:]
+    scan_axis = np.cross(x, y)
+    scan_origin = ref_position
+
+    # Calculate distance along the scan axis for each file
+    sort_list = []
+    for file in file_paths:
+        ds = pydicom.dcmread(file)
+        position = np.array([float(x) for x in ds.ImagePositionPatient])
+        vec = position - scan_origin
+        dist = np.dot(vec, scan_axis)
+        sort_list.append((file, dist))
+
+    # Sort files by distance
+    sorted_files = sorted(sort_list, key=lambda x: x[1])
+
+    # Extract sorted file paths
+    sorted_file_paths = [file for file, _ in sorted_files]
+
+    return sorted_file_paths, ''
 
 
 def main():
@@ -530,9 +586,6 @@ def main():
     else:
         day_shifts = None
 
-    # Check if any DICOM file contains the patient name; if found, create an anonymized copy in a new folder
-    input_folders = check_and_rename_dicom_files(input_folders, "NONAME")
-
     # Get the list of all patient folders
     all_patient_folders = [
         dir
@@ -574,7 +627,6 @@ def main():
 
             # Rename the subject / session folders in the CTP output to match the new IDs generated by DAT
             rename_ctp_output_subject_folders(CTP_output_folder, folder)
-
             # Write the mapping between the old and new IDs and the DATEINC values to the file
             info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
             file.write(info)
