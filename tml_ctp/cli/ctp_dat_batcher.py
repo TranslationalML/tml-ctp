@@ -43,6 +43,7 @@ import pydicom
 import numpy as np
 from pathlib import Path
 from pydicom.uid import generate_uid
+from typing import List, Tuple
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -460,7 +461,7 @@ def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
         return dicom_folder
 
 
-def get_sorted_image_files(file_paths, epsilon=0.01):
+def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
     """Sort DICOM image files in increasing slice order (IS direction) corresponding to a series.
 
     Args:
