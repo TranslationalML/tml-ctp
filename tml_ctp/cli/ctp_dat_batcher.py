@@ -147,11 +147,13 @@ def run_dat(
     Raises:
         Exception: If the Docker run command fails with a non-zero return code
     """
+    # Check if patient name is contained in filenames and replace it with new uid
+    input_folder = check_and_rename_dicom_files(input_folder)
+
     # Update the DAT script with new PatientID, PatientName and DATEINC values
     (new_patient_id, new_patient_name, dateinc) = update_dat_script_file(
         dat_script, new_patient_id=new_patient_id, dateinc=dateinc
     )
-    input_folder = check_and_rename_dicom_files(input_folder, new_patient_id)
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
@@ -392,7 +394,7 @@ def get_parser():
     return parser
 
 
-def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
+def check_and_rename_dicom_files(dicom_folder: str) -> str:
     """Check if any DICOM filename contains the patient name and, if found, create a copy of the entire folder with anonymized filenames.
 
     This function scans through the specified folder containing DICOM files to detect any filenames that include the patient name.
@@ -400,10 +402,9 @@ def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
-        new_patientid (str): New patient name to replace the old one in the filenames.
 
     Returns:
-        str: Path to the new folder if any file was renamed, otherwise the original folder path.
+        str: Path to the new folder, otherwise the original folder path
     """
     dicom_folder_path = Path(dicom_folder).parent
     parent_folder = dicom_folder_path.parent
@@ -432,8 +433,7 @@ def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
     # If any file contains the patient name, proceed with renaming and copying
     if any_renamed:
         # Generate new UID
-        if new_patientid is None:
-            new_patientid = generate_uid()
+        new_iud = generate_uid()
         # Sort the file paths to have the right slice order
         sorted_file_paths, warning_text = get_sorted_image_files(file_paths)
 
@@ -442,7 +442,7 @@ def check_and_rename_dicom_files(dicom_folder: str, new_patientid: str) -> str:
                 ds = pydicom.dcmread(file_path)
 
                 # Prepare new filename
-                new_filename = f"{new_patientid}.slice{index}.dcm"
+                new_filename = f"{new_iud}.slice{index}.dcm"
 
                 # Copy file to new folder with new name
                 relative_path = file_path.relative_to(dicom_folder_path)
