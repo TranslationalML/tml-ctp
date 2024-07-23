@@ -406,32 +406,33 @@ def get_parser():
 
 
 def random_with_N_digits(n: int) -> int:
-    """Generate a random number with exactly N digits.
-
-    This function generates a random integer with the specified number of digits.
-    For example, if `n` is 3, the function will return a number between 100 and 999.
+    """
+    Generates a random integer with the specified number of digits.
 
     Args:
-        n (int): The number of digits for the random number.
+        n (int): The number of digits for the random integer. Must be greater than 0.
 
     Returns:
-        int: A random integer with exactly `n` digits.
+        int: A random integer with exactly n digits.
 
     Raises:
-        ValueError: If `n` is less than 1.
-
-    Examples:
-        >>> random_with_N_digits(3)
-        472
-        >>> random_with_N_digits(5)
-        19485
+        ValueError: If n is less than or equal to 0.
     """
-    if n < 1:
-        raise ValueError("Number of digits must be at least 1")
+    if n <= 0:
+        raise ValueError("Number of digits must be greater than 0")
 
-    range_start = 10**(n - 1)
-    range_end = (10**n) - 1
-    return randint(range_start, range_end)
+    random_instance = random.Random()
+
+    # Generate the first digit from 1 to 9 to ensure it is not zero
+    first_digit = random_instance.choice('123456789')
+
+    # Generate the remaining digits from 0 to 9
+    remaining_digits = ''.join(random_instance.choices('0123456789', k=n - 1))
+
+    # Combine the digits into a single number
+    number = int(first_digit + remaining_digits)
+
+    return number
 
 
 def main():
@@ -528,6 +529,7 @@ def main():
         all_patient_folders.sort()
 
         # Create a file to store the mapping between the old and new IDs and the DATEINC values
+
         input_path = Path(input_folders).resolve()
         parent_dir_name = input_path.parent.name if input_path.parent != input_path else input_path.name
         CTP_ids_file = os.path.join(
