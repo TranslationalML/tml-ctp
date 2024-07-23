@@ -40,6 +40,7 @@ import subprocess
 import random
 import uuid
 import pydicom
+from pathlib import Path
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -478,8 +479,10 @@ def main():
     all_patient_folders.sort()
 
     # Create a file to store the mapping between the old and new IDs and the DATEINC values
+    input_path = Path(input_folders).resolve()
+    parent_dir_name = input_path.parent.name if input_path.parent != input_path else input_path.name
     CTP_ids_file = os.path.join(
-        CTP_output_folder, f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
+        CTP_output_folder, f"CTP_{parent_dir_name}_newids_dateinc_log.csv"
     )
     with open(CTP_ids_file, "a") as file:
         for i, folder in enumerate(all_patient_folders):
