@@ -213,6 +213,9 @@ def update_dat_script_file(
     with open(new_dat_script, "r") as f:
         lines = f.readlines()
 
+    # Find the index of the end script tag
+    end_script_index = next((i for i, line in enumerate(lines) if '</script>' in line), None)
+
     # Assuming the DATEINC is always at the second line
     if "DATEINC" not in lines[1]:
         raise ValueError("DATEINC not found in the second line of the DAT script")
@@ -234,7 +237,7 @@ def update_dat_script_file(
         )
     else:
         # If the PatientID line does not exist, append it to the end
-        lines.append(f'<e en="T" t="00100020" n="PatientID">{new_patient_id}</e>\n')
+        lines.insert(end_script_index, f'<e en="T" t="00100020" n="PatientID">{new_patient_id}</e>\n')
 
     # Generate a UUID for the PatientName
     new_patient_name = str(uuid.uuid4().int)[:7]
@@ -249,7 +252,7 @@ def update_dat_script_file(
         )
     else:
         # If the PatientName line does not exist, append it to the end
-        lines.append(f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
+        lines.insert(end_script_index, f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
 
     with open(new_dat_script, "w") as f:
         f.writelines(lines)
