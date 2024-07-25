@@ -42,8 +42,8 @@ import uuid
 import pydicom
 import numpy as np
 from pathlib import Path
-from pydicom.uid import generate_uid
 from typing import List, Tuple
+from pydicom.uid import generate_uid
 
 from tml_ctp.info import __version__, __container_name__
 
@@ -147,13 +147,12 @@ def run_dat(
     Raises:
         Exception: If the Docker run command fails with a non-zero return code
     """
-    # Check if patient name is contained in filenames and replace it with new uid
-    input_folder = check_and_rename_dicom_files(input_folder)
-
     # Update the DAT script with new PatientID, PatientName and DATEINC values
-    (new_patient_id, new_patient_name, dateinc) = update_dat_script_file(
+    (new_patient_id, new_patient_name, new_series_uid, dateinc) = update_dat_script_file(
         dat_script, new_patient_id=new_patient_id, dateinc=dateinc
     )
+    # Get the set of all patient names saved in dicoms
+    patient_names_set = get_patient_names(input_folder)
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
@@ -173,6 +172,8 @@ def run_dat(
             f"Command {cmd} failed (return code {process.returncode}) "
             f"with the following error:\n {process.stderr}"
         )
+    # Check if patient name present in output folder
+    check_and_rename_dicom_files(output_folder, patient_names_set, str(new_series_uid))
     return (new_patient_id, new_patient_name, dateinc)
 
 
@@ -180,6 +181,7 @@ def update_dat_script_file(
     original_dat_script: str, new_patient_id: str = None, dateinc: int = None
 ):
     """Update the DAT script with a new DATEINC value, a new PatientID, and new random UUID for PatientName.
+    Additionally, update or add SeriesInstanceUID.
 
     If `new_patient_id` is `None`, a new random UUID for the PatientID is generated.
     If `dateinc` is `None`, a new random DATEINC value is generated between -30 and 30.
@@ -188,6 +190,7 @@ def update_dat_script_file(
     Moreover, the original DAT script is modified in place and the new DATEINC value is returned.
 
     If the PatientID line or the PatientName line does not exist, they are appended to the end of the file.
+    If the SeriesInstanceUID line does not exist, it is inserted before the closing </script> tag.
 
     Args:
         original_dat_script (str): Path to the original DAT script
@@ -195,13 +198,15 @@ def update_dat_script_file(
         dateinc (int): New DATEINC value to use in the DAT script
 
     Returns:
-        tuple: Tuple containing the new PatientID, PatientName, and DATEINC values
+        tuple: Tuple containing the new PatientID, PatientName, SeriesInstanceUID, and DATEINC values
 
     Raises:
         ValueError: If the DATEINC is not found in the second line of the DAT script
     """
     with open(original_dat_script, "r") as f:
         lines = f.readlines()
+    # Find the index of end script tag
+    end_script_index = next((i for i, line in enumerate(lines) if '</script>' in line), None)
 
     # Assuming the DATEINC is always at the second line
     if "DATEINC" not in lines[1]:
@@ -241,12 +246,28 @@ def update_dat_script_file(
         # If the PatientName line does not exist, append it to the end
         lines.append(f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
 
+    # Generate a new SeriesInstanceUID
+    new_series_uid = generate_uid()
+    # Find the line that sets the SeriesInstanceUID and modify it
+    series_uid_line_index = next(
+        (i for i, line in enumerate(lines) if 'n="SeriesInstanceUID"' in line), None
+    )
+    if series_uid_line_index is not None:
+        lines[series_uid_line_index] = (
+            f'<e en="T" t="0020000E" n="SeriesInstanceUID">{new_series_uid}</e>\n'
+        )
+    else:
+        # If the SeriesInstanceUID line does not exist, insert it before the closing </script> tag
+        if end_script_index is not None:
+            lines.insert(end_script_index, f'<e en="T" t="0020000E" n="SeriesInstanceUID">{new_series_uid}</e>\n')
+
     with open(original_dat_script, "w") as f:
         f.writelines(lines)
 
     return (
         new_patient_id,
         new_patient_name,
+        new_series_uid,
         dateinc,
     )  # Return the generated values as a tuple
 
@@ -394,23 +415,19 @@ def get_parser():
     return parser
 
 
-def check_and_rename_dicom_files(dicom_folder: str) -> str:
-    """Check if any DICOM filename contains the patient name and, if found, create a copy of the entire folder with anonymized filenames.
+def check_and_rename_dicom_files(dicom_folder: str, patient_names: set, replacement_string: str) -> None:
+    """
+    Check if any DICOM filename contains any of the patient names and, if found, rename the files with anonymized filenames.
 
-    This function scans through the specified folder containing DICOM files to detect any filenames that include the patient name.
-    If such filenames are found, it renames these files by replacing the patient name with a new anonymized name and copies the entire folder structure to a new location with these updated filenames.
+    This function scans through the specified folder containing DICOM files to detect any filenames that include the patient names.
+    If such filenames are found, it renames these files by replacing the patient names with a new anonymized name.
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
-
-    Returns:
-        str: Path to the new folder, otherwise the original folder path
+        patient_names (set): A set of patient names to check for in the DICOM filenames.
+        replacement_string (str): The string to replace the patient name with.
     """
-    dicom_folder_path = Path(dicom_folder).parent
-    parent_folder = dicom_folder_path.parent
-    new_folder = parent_folder / f"{dicom_folder_path.name}_anonymized"
     any_renamed = False
-    old_patient_name = ""
 
     # Gather all DICOM file paths
     file_paths = []
@@ -419,62 +436,50 @@ def check_and_rename_dicom_files(dicom_folder: str) -> str:
             if file.endswith(".dcm"):
                 file_paths.append(Path(root) / file)
 
-    # First pass to check if any file contains the patient name
+    # First pass to check if any file contains the patient names
     for file_path in file_paths:
         try:
-            ds = pydicom.dcmread(file_path)
-            old_patient_name = str(ds.PatientName).lower()
-            if old_patient_name in file_path.name.lower():
-                any_renamed = True
+            for patient_name in patient_names:
+                if patient_name.lower() in file_path.name.lower():
+                    any_renamed = True
+                    break
+            if any_renamed:
                 break
         except Exception as e:
             print(f"An error occurred while processing {file_path}: {e}")
 
-    # If any file contains the patient name, proceed with renaming and copying
+    # If any file contains a patient name, proceed with renaming
     if any_renamed:
-        # Generate new UID
-        new_iud = generate_uid()
         # Sort the file paths to have the right slice order
-        sorted_file_paths, warning_text = get_sorted_image_files(file_paths)
+        sorted_file_paths = get_sorted_image_files(file_paths)
 
         for index, file_path in enumerate(sorted_file_paths, start=0):
             try:
-                ds = pydicom.dcmread(file_path)
-
                 # Prepare new filename
-                new_filename = f"{new_iud}.slice{index}.dcm"
+                new_filename = file_path.name
+                for patient_name in patient_names:
+                    new_filename = new_filename.lower().replace(patient_name.lower(), replacement_string)
 
-                # Copy file to new folder with new name
-                relative_path = file_path.relative_to(dicom_folder_path)
-                new_root = new_folder / relative_path.parent
-                new_root.mkdir(parents=True, exist_ok=True)
-                new_file_path = new_root / new_filename
-
-                shutil.copy(file_path, new_file_path)
-                print(f"File copied:{new_file_path}")
+                # Rename file
+                new_file_path = file_path.with_name(new_filename)
+                file_path.rename(new_file_path)
+                print(f"File renamed to: {new_file_path}")
 
             except Exception as e:
                 print(f"An error occurred while processing {file_path}: {e}")
 
-        return str(new_folder)
-    else:
-        return dicom_folder
-
 
 def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
-    """Sort DICOM image files in increasing slice order (IS direction) corresponding to a series.
+    """Sort DICOM image files in increasing slice order.
 
     Args:
         file_paths (list): List of file paths to DICOM files.
-        epsilon (float): Maximum difference in distance between slices to consider spacing uniform.
 
     Returns:
         list: Sorted file paths.
-        str: Warning text if any issues are found.
     """
-    warning_text = 'No DICOM files found to sort.'
     if len(file_paths) == 0:
-        return file_paths, warning_text
+        return file_paths
 
     # Use the first file to get reference orientation and position
     ref_file = file_paths[0]
@@ -503,7 +508,33 @@ def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
     # Extract sorted file paths
     sorted_file_paths = [file for file, _ in sorted_files]
 
-    return sorted_file_paths, ''
+    return sorted_file_paths
+
+
+def get_patient_names(dicom_folder: str) -> set:
+    """
+    Get a set of unique patient names from the DICOM files in the specified folder.
+
+    Args:
+        dicom_folder (str): Path to the folder containing DICOM files.
+
+    Returns:
+        set: A set containing unique patient names found in the DICOM files.
+    """
+    patient_names = set()
+
+    for root, _, files in os.walk(dicom_folder):
+        for file in files:
+            if file.endswith(".dcm"):
+                file_path = Path(root) / file
+                try:
+                    ds = pydicom.dcmread(file_path)
+                    patient_name = str(ds.PatientName).strip()
+                    patient_names.add(patient_name)
+                except Exception as e:
+                    print(f"An error occurred while processing {file_path}: {e}")
+
+    return patient_names
 
 
 def main():
@@ -596,8 +627,10 @@ def main():
     all_patient_folders.sort()
 
     # Create a file to store the mapping between the old and new IDs and the DATEINC values
+    input_path = Path(input_folders).resolve()
+    parent_dir_name = input_path.parent.name if input_path.parent != input_path else input_path.name
     CTP_ids_file = os.path.join(
-        CTP_output_folder, f"CTP_{input_folders.split('/')[-2]}_newids_dateinc_log.csv"
+        CTP_output_folder, f"CTP_{parent_dir_name}_newids_dateinc_log.csv"
     )
     with open(CTP_ids_file, "a") as file:
         for i, folder in enumerate(all_patient_folders):
@@ -612,6 +645,7 @@ def main():
                 dateinc = day_shifts[folder]
             else:
                 dateinc = None
+
             try:
                 os.makedirs(os.path.join(CTP_output_folder, folder), exist_ok=True)
                 (new_patient_id, _, dateinc) = run_dat(
@@ -628,6 +662,7 @@ def main():
 
             # Rename the subject / session folders in the CTP output to match the new IDs generated by DAT
             rename_ctp_output_subject_folders(CTP_output_folder, folder)
+
             # Write the mapping between the old and new IDs and the DATEINC values to the file
             info = f"{folder}, sub-{new_patient_id}, {dateinc}\n"
             file.write(info)
