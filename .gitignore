@@ -18,3 +18,7 @@ dist/
 tests/tmp/
 tests/report/
 
+# Documentation build
+docs/build
+docs/source/api
+
