@@ -9,9 +9,47 @@ tml_ctp documentation
 Welcome to tml_ctp's documentation!
 ===================================
 
+Contents
+=========
+
+.. _getting_started:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Getting started
+
+   installation
+
+.. _user-docs:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Documentation
+
+   usage
+
+.. _developer-docs:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Documentation
+
+   developer
+
+.. _api-doc:
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    api/generated/modules
+
+.. _about-docs:
+
+.. toctree::
+   :maxdepth: 1
+   :caption: About tml_ctp
+
+   contributing
+   license
 
