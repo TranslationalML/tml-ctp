@@ -90,6 +90,42 @@ Example
       -i /path/to/input/folder \
       -o /path/of/output/folder \
       -s /path/to/dat/script
+    
+- **Using JSON files for Patient IDs and Day Shifts**:
+
+To specify new patient IDs and day shifts, you can provide JSON files as arguments to the `--new-ids` and `--day-shift` options.
+These JSON files should contain the mappings for each patient in the following formats:
+
+For patient IDs:
+
+.. code-block:: json
+
+    {
+        "Patient1": "anonymousID1",
+        "Patient2": "anonymousID2"
+    }
+
+For day shifts:
+
+.. code-block:: json
+
+    {
+        "Patient1": 5,
+        "Patient2": -3
+    }
+
+These JSON files will be used to replace the patient IDs and adjust the session dates by the specified number of days for each patient in the input directory.
+
+Example command:
+
+.. code-block:: bash
+
+    tml_ctp_dat_batcher \
+      -i /path/to/input/folder \
+      -o /path/to/output/folder \
+      -s /path/to/dat/script \
+      --new-ids /path/to/new_ids.json \
+      --day-shift /path/to/day_shift.json
 
 tml_ctp_clean_series_tags
 -------------------------
