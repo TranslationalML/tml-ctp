@@ -252,3 +252,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the [License](./LICENSE) for the specific language governing permissions and
 limitations under the License.
+
+### Test Data License
+
+The DICOM series files used for testing in this project are generated from the [PACSMAN_data](https://github.com/TranslationalML/PACSMAN_data) library.
+
+These files are distributed under the **Creative Commons Attribution 4.0 International (CC BY 4.0) License**. For more information, please refer to the [test data README](tests/data/README.md) and the [CC BY 4.0 License](https://creativecommons.org/licenses/by/4.0/).
