@@ -75,6 +75,14 @@ Below is a list of the available `make` commands and their purposes:
 
      make clean-tests
 
+- **`build-docs`**:
+  
+  Generates the Sphinx HTML documentation for the project. This command compiles the reStructuredText files located in the `docs/source` directory into HTML files that are stored in the `docs/build` directory.
+
+  .. code-block:: bash
+
+     make build-docs
+
 - **`help`**:
   
   Lists all available `make` commands for the project. This command is a handy reference to quickly see what automation tasks are available in the `Makefile`.

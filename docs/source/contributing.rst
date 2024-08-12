@@ -58,8 +58,8 @@ Here’s a quick guide to the commit types you should use:
 
 - **[FEAT]:** For introducing new features or enhancements to existing functionality.
 - **[FIX]:** For correcting bugs or issues within the project.
-- **[TST]:** For adding or updating tests within the codebase.
-- **[DOC]:** For changes or additions to documentation.
+- **[TEST]:** For adding or updating tests within the codebase.
+- **[DOCS]:** For changes or additions to documentation.
 - **[STYLE]:** For stylistic changes that do not alter the functionality of the code, such as formatting adjustments.
 - **[REFACTOR]:** For refactoring existing code without changing its behavior.
 - **[CI]:** For updates to the continuous integration setup or related scripts.
