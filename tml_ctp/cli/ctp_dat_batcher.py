@@ -40,11 +40,9 @@ import subprocess
 import random
 import uuid
 import pydicom
-import numpy as np
 import tempfile
 from pydicom.uid import generate_uid
-from random import randint
-from typing import List, Tuple
+from typing import Tuple
 from pathlib import Path
 
 
@@ -482,65 +480,20 @@ def check_and_rename_dicom_files(dicom_folder: str, patient_identifiers: set[str
 
     # If any file contains a patient name, proceed with renaming
     if any_needs_renaming:
-        # Sort the file paths to have the right slice order
-        sorted_file_paths = get_sorted_image_files(file_paths)
 
-        for index, file_path in enumerate(sorted_file_paths, start=0):
+        for index, file_path in enumerate(file_paths, start=0):
             try:
                 # Prepare new filename
                 new_filename = file_path.name
                 for patient_identifier in patient_identifiers:
-                    new_filename = new_filename.lower().replace(patient_identifier.lower(), replacement_string)
+                    new_filename = f"{replacement_string}.{index}.dcm"
 
                 # Rename file
                 new_file_path = file_path.with_name(new_filename)
                 file_path.rename(new_file_path)
-                print(f"File renamed to: {new_file_path}")
 
             except Exception as e:
                 print(f"An error occurred while processing {file_path}: {e}")
-
-
-def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
-    """Sort DICOM image files in increasing slice order.
-
-    Args:
-        file_paths (list): List of file paths to DICOM files.
-
-    Returns:
-        list: Sorted file paths.
-    """
-    if len(file_paths) == 0:
-        return file_paths
-
-    # Use the first file to get reference orientation and position
-    ref_file = file_paths[0]
-    ds = pydicom.dcmread(ref_file)
-    ref_position = np.array([float(x) for x in ds.ImagePositionPatient])
-    ref_orientation = np.array([float(x) for x in ds.ImageOrientationPatient])
-
-    # Determine out-of-plane direction for the first slice
-    x = ref_orientation[:3]
-    y = ref_orientation[3:]
-    scan_axis = np.cross(x, y)
-    scan_origin = ref_position
-
-    # Calculate distance along the scan axis for each file
-    sort_list = []
-    for file in file_paths:
-        ds = pydicom.dcmread(file)
-        position = np.array([float(x) for x in ds.ImagePositionPatient])
-        vec = position - scan_origin
-        dist = np.dot(vec, scan_axis)
-        sort_list.append((file, dist))
-
-    # Sort files by distance
-    sorted_files = sorted(sort_list, key=lambda x: x[1])
-
-    # Extract sorted file paths
-    sorted_file_paths = [file for file, _ in sorted_files]
-
-    return sorted_file_paths
 
 
 def get_patient_identifiers(dicom_folder: str) -> set[str]:
