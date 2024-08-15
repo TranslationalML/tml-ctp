@@ -157,7 +157,7 @@ def run_dat(
         dat_script, temp_dir, new_patient_id=new_patient_id, dateinc=dateinc
     )
     # Get the set of all patient names saved in dicoms
-    patient_names_set = get_patient_names(input_folder)
+    patient_identifiers_set = get_patient_identifiers(input_folder)
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
@@ -178,7 +178,7 @@ def run_dat(
             f"with the following error:\n {process.stderr}"
         )
     # Check if patient name present in output folder
-    check_and_rename_dicom_files(output_folder, patient_names_set, str(new_series_uid))
+    check_and_rename_dicom_files(output_folder, patient_identifiers_set, str(new_series_uid))
     return (new_patient_id, new_patient_name, dateinc)
 
 
@@ -448,7 +448,7 @@ def get_parser():
     return parser
 
 
-def check_and_rename_dicom_files(dicom_folder: str, patient_names: set[str], replacement_string: str) -> None:
+def check_and_rename_dicom_files(dicom_folder: str, patient_identifiers: set[str], replacement_string: str) -> None:
     """Check if any DICOM filename contains any of the patient names and, if found, rename the files with anonymized filenames.
 
     This function scans through the specified folder containing DICOM files to detect any filenames that include the patient names.
@@ -456,10 +456,10 @@ def check_and_rename_dicom_files(dicom_folder: str, patient_names: set[str], rep
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
-        patient_names (set[str]): A set of strings representing patient names to check for in the DICOM filenames.
+        patient_identifiers (set[str]): A set of strings representing patient identifiers to check for in the DICOM filenames.
         replacement_string (str): The string to replace the patient name with.
     """
-    any_renamed = False
+    any_needs_renaming = False
 
     # Gather all DICOM file paths
     file_paths = []
@@ -471,17 +471,17 @@ def check_and_rename_dicom_files(dicom_folder: str, patient_names: set[str], rep
     # First pass to check if any file contains the patient names
     for file_path in file_paths:
         try:
-            for patient_name in patient_names:
-                if patient_name.lower() in file_path.name.lower():
-                    any_renamed = True
+            for patient_identifier in patient_identifiers:
+                if patient_identifier.lower() in file_path.name.lower():
+                    any_needs_renaming = True
                     break
-            if any_renamed:
+            if any_needs_renaming:
                 break
         except Exception as e:
             print(f"An error occurred while processing {file_path}: {e}")
 
     # If any file contains a patient name, proceed with renaming
-    if any_renamed:
+    if any_needs_renaming:
         # Sort the file paths to have the right slice order
         sorted_file_paths = get_sorted_image_files(file_paths)
 
@@ -489,8 +489,8 @@ def check_and_rename_dicom_files(dicom_folder: str, patient_names: set[str], rep
             try:
                 # Prepare new filename
                 new_filename = file_path.name
-                for patient_name in patient_names:
-                    new_filename = new_filename.lower().replace(patient_name.lower(), replacement_string)
+                for patient_identifier in patient_identifiers:
+                    new_filename = new_filename.lower().replace(patient_identifier.lower(), replacement_string)
 
                 # Rename file
                 new_file_path = file_path.with_name(new_filename)
@@ -543,17 +543,17 @@ def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
     return sorted_file_paths
 
 
-def get_patient_names(dicom_folder: str) -> set:
+def get_patient_identifiers(dicom_folder: str) -> set:
     """
-    Get a set of unique patient names from the DICOM files in the specified folder.
+    Get a set of unique patient identifiers from the DICOM files in the specified folder.
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
 
     Returns:
-        set: A set containing unique patient names found in the DICOM files.
+        set: A set containing unique patient idenfiers found in the DICOM files.
     """
-    patient_names = set()
+    patient_identifiers = set()
 
     for root, _, files in os.walk(dicom_folder):
         for file in files:
@@ -562,11 +562,11 @@ def get_patient_names(dicom_folder: str) -> set:
                 try:
                     ds = pydicom.dcmread(file_path)
                     patient_name = str(ds.PatientName).strip()
-                    patient_names.add(patient_name)
+                    patient_identifiers.add(patient_name)
                 except Exception as e:
                     print(f"An error occurred while processing {file_path}: {e}")
 
-    return patient_names
+    return patient_identifiers
 
 
 def random_with_N_digits(n: int) -> int:
