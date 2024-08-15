@@ -264,8 +264,23 @@ def update_dat_script_file(
         # If the PatientName line does not exist, append it to the end
         lines.insert(end_script_index, f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
 
+    # Find the line with UIDROOT and extract its value
+    uidroot_line = next((line for line in lines if 't="UIDROOT"' in line), None)
+    if uidroot_line:
+        uidroot_value = uidroot_line.split('>')[1].split('<')[0]  # Extract the value between the tags
+        # Ensure the prefix ends with a period
+        if not uidroot_value.endswith('.'):
+            uidroot_value += '.'
+    else:
+        # If UIDROOT line does not exist, insert it before the closing </script> tag
+        default_uidroot = '1.2.826.0.1.3680043.8.498'
+        lines.insert(end_script_index, f'<p t="UIDROOT">{default_uidroot}</p>\n')
+        
+        # Use the default value with a period for the prefix
+        uidroot_value = f'{default_uidroot}.'
+
     # Generate a new SeriesInstanceUID
-    new_series_uid = generate_uid()
+    new_series_uid = generate_uid(prefix=uidroot_value)
     # Find the line that sets the SeriesInstanceUID and modify it
     series_uid_line_index = next(
         (i for i, line in enumerate(lines) if 'n="SeriesInstanceUID"' in line), None
