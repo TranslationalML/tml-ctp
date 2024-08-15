@@ -543,7 +543,7 @@ def get_sorted_image_files(file_paths: List[str]) -> Tuple[List[str], str]:
     return sorted_file_paths
 
 
-def get_patient_identifiers(dicom_folder: str) -> set:
+def get_patient_identifiers(dicom_folder: str) -> set[str]:
     """
     Get a set of unique patient identifiers from the DICOM files in the specified folder.
 
@@ -551,7 +551,7 @@ def get_patient_identifiers(dicom_folder: str) -> set:
         dicom_folder (str): Path to the folder containing DICOM files.
 
     Returns:
-        set: A set containing unique patient idenfiers found in the DICOM files.
+        set[str]: A set containing unique patient idenfiers found in the DICOM files.
     """
     patient_identifiers = set()
 
