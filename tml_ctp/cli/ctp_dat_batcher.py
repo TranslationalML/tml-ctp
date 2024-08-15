@@ -448,16 +448,15 @@ def get_parser():
     return parser
 
 
-def check_and_rename_dicom_files(dicom_folder: str, patient_names: set, replacement_string: str) -> None:
-    """
-    Check if any DICOM filename contains any of the patient names and, if found, rename the files with anonymized filenames.
+def check_and_rename_dicom_files(dicom_folder: str, patient_names: set[str], replacement_string: str) -> None:
+    """Check if any DICOM filename contains any of the patient names and, if found, rename the files with anonymized filenames.
 
     This function scans through the specified folder containing DICOM files to detect any filenames that include the patient names.
     If such filenames are found, it renames these files by replacing the patient names with a new anonymized name.
 
     Args:
         dicom_folder (str): Path to the folder containing DICOM files.
-        patient_names (set): A set of patient names to check for in the DICOM filenames.
+        patient_names (set[str]): A set of strings representing patient names to check for in the DICOM filenames.
         replacement_string (str): The string to replace the patient name with.
     """
     any_renamed = False
