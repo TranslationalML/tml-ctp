@@ -16,6 +16,9 @@
 
 import os
 from tml_ctp.info import __container_name__, __version__
+from unittest.mock import patch, MagicMock
+from pathlib import Path
+from tml_ctp.cli.ctp_dat_batcher import check_and_rename_dicom_files, get_patient_identifiers
 
 
 def test_ctp_dat_batcher_script_basic(script_runner, test_dir, data_dir):
@@ -64,3 +67,67 @@ def test_ctp_dat_batcher_script_pacsman(script_runner, test_dir, data_dir):
 
     # Check that the output directory has been created
     assert os.path.exists(os.path.join(test_dir, "tmp", "PACSMANCohort-CTP-pacsman"))
+
+
+@patch("os.walk")
+@patch("pathlib.Path.rename")
+@patch("pathlib.Path.with_name")
+def test_check_and_rename_dicom_files(mock_with_name, mock_rename, mock_os_walk):
+    """Test check_and_rename_dicom_files to ensure all DICOM files are renamed when any file contains a patient identifier.
+
+    Raises:
+        AssertionError: If the renaming logic does not work as expected.
+    """
+    dicom_folder = "/fake/path"
+    patient_identifiers = {"JohnDoe", "JaneSmith"}
+    replacement_string = "ANONYMOUS"
+
+    # Mocking os.walk to return a list of files in the directory
+    mock_os_walk.return_value = [
+        ("/fake/path", [], ["JohnDoe.dcm", "JaneSmith_1.dcm", "normalfile.dcm"])
+    ]
+
+    # Mocking Path.with_name to return the new filename path
+    mock_with_name.side_effect = lambda new_name: Path(f"/fake/path/{new_name}")
+
+    check_and_rename_dicom_files(dicom_folder, patient_identifiers, replacement_string)
+
+    # Assert that Path.with_name was called correctly for all files
+    mock_with_name.assert_any_call("ANONYMOUS.0.dcm")
+    mock_with_name.assert_any_call("ANONYMOUS.1.dcm")
+    mock_with_name.assert_any_call("ANONYMOUS.2.dcm")
+
+    # Assert that Path.rename was called the expected number of times.
+    # Currently, the function renames all files if any file contains a patient identifier. If the function is changed to rename only problematic files, this assertion will need to be updated accordingly.
+    assert mock_rename.call_count == 3
+    mock_rename.assert_any_call(Path("/fake/path/ANONYMOUS.0.dcm"))
+    mock_rename.assert_any_call(Path("/fake/path/ANONYMOUS.1.dcm"))
+    mock_rename.assert_any_call(Path("/fake/path/ANONYMOUS.2.dcm"))
+
+
+@patch("os.walk")
+@patch("pydicom.dcmread")
+def test_get_patient_identifiers(mock_dcmread, mock_os_walk):
+    """Test get_patient_identifiers to ensure it correctly extracts unique patient identifiers."""
+    dicom_folder = "/fake/path"
+
+    # Mocking os.walk to simulate directory structure
+    mock_os_walk.return_value = [
+        ("/fake/path", [], ["file1.dcm", "file2.dcm", "file3.dcm"])
+    ]
+
+    # Creating mock DICOM datasets
+    mock_ds1 = MagicMock()
+    mock_ds1.PatientName = "JohnDoe"
+
+    mock_ds2 = MagicMock()
+    mock_ds2.PatientName = "JaneSmith"
+
+    mock_ds3 = MagicMock()
+    mock_ds3.PatientName = "JohnDoe" 
+
+    mock_dcmread.side_effect = [mock_ds1, mock_ds2, mock_ds3]
+
+    result = get_patient_identifiers(dicom_folder)
+
+    assert result == {"JohnDoe", "JaneSmith"}

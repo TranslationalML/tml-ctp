@@ -41,7 +41,7 @@ import random
 import uuid
 import pydicom
 import tempfile
-from random import randint
+from pydicom.uid import generate_uid
 from typing import Tuple
 from pathlib import Path
 
@@ -151,9 +151,11 @@ def run_dat(
         Exception: If the Docker run command fails with a non-zero return code.
     """
     # Update the DAT script with new PatientID, PatientName and DATEINC values
-    (new_patient_id, new_patient_name, dateinc, updated_dat_script) = update_dat_script_file(
+    (new_patient_id, new_patient_name, new_series_uid, dateinc, updated_dat_script) = update_dat_script_file(
         dat_script, temp_dir, new_patient_id=new_patient_id, dateinc=dateinc
     )
+    # Get the set of all patient names saved in dicoms
+    patient_identifiers_set = get_patient_identifiers(input_folder)
     # Create the command to run DAT.jar with Docker
     cmd = create_docker_dat_command(
         input_folder=input_folder,
@@ -173,6 +175,8 @@ def run_dat(
             f"Command {cmd} failed (return code {process.returncode}) "
             f"with the following error:\n {process.stderr}"
         )
+    # Check if patient name present in output folder
+    check_and_rename_dicom_files(output_folder, patient_identifiers_set, str(new_series_uid))
     return (new_patient_id, new_patient_name, dateinc)
 
 
@@ -180,6 +184,7 @@ def update_dat_script_file(
     original_dat_script: str, temp_dir: str, new_patient_id: str = None, dateinc: int = None
 ) -> Tuple[str, str, int, str]:
     """Update the DAT script with a new DATEINC value, a new PatientID, and new random UUID for PatientName.
+    Additionally, update or add SeriesInstanceUID.
 
     If `new_patient_id` is `None`, a new random UUID for the PatientID is generated.
     If `dateinc` is `None`, a new random DATEINC value is generated between -30 and 30.
@@ -189,6 +194,7 @@ def update_dat_script_file(
     and the modifications are applied to this new script.
 
     If the PatientID line or the PatientName line does not exist, they are appended to the end of the file.
+    If the SeriesInstanceUID line does not exist, it is inserted before the closing </script> tag.
 
     Args:
         original_dat_script (str): Path to the original DAT script.
@@ -197,7 +203,7 @@ def update_dat_script_file(
         dateinc (int): New DATEINC value to use in the DAT script.
 
     Returns:
-        tuple: Tuple containing the new PatientID, PatientName, DATEINC values, and the path to the modified DAT script.
+        tuple: Tuple containing the new PatientID, PatientName, SeriesInstanceUID, DATEINC values, and the path to the modified DAT script.
 
     Raises:
         ValueError: If the DATEINC is not found in the second line of the DAT script.
@@ -212,6 +218,8 @@ def update_dat_script_file(
     # Read the lines from the new script file
     with open(new_dat_script, "r") as f:
         lines = f.readlines()
+    # Find the index of end script tag
+    end_script_index = next((i for i, line in enumerate(lines) if '</script>' in line), None)
 
     # Find the index of the end script tag
     end_script_index = next((i for i, line in enumerate(lines) if '</script>' in line), None)
@@ -254,12 +262,42 @@ def update_dat_script_file(
         # If the PatientName line does not exist, append it to the end
         lines.insert(end_script_index, f'<e en="T" t="00100010" n="PatientName">{new_patient_name}</e>\n')
 
+    # Find the line with UIDROOT and extract its value
+    uidroot_line = next((line for line in lines if 't="UIDROOT"' in line), None)
+    if uidroot_line:
+        uidroot_value = uidroot_line.split('>')[1].split('<')[0]  # Extract the value between the tags
+        # Ensure the prefix ends with a period
+        if not uidroot_value.endswith('.'):
+            uidroot_value += '.'
+    else:
+        # If UIDROOT line does not exist, insert it before the closing </script> tag
+        default_uidroot = '1.2.826.0.1.3680043.8.498'
+        lines.insert(end_script_index, f'<p t="UIDROOT">{default_uidroot}</p>\n')
+        
+        # Use the default value with a period for the prefix
+        uidroot_value = f'{default_uidroot}.'
+
+    # Generate a new SeriesInstanceUID
+    new_series_uid = generate_uid(prefix=uidroot_value)
+    # Find the line that sets the SeriesInstanceUID and modify it
+    series_uid_line_index = next(
+        (i for i, line in enumerate(lines) if 'n="SeriesInstanceUID"' in line), None
+    )
+    if series_uid_line_index is not None:
+        lines[series_uid_line_index] = (
+            f'<e en="T" t="0020000E" n="SeriesInstanceUID">{new_series_uid}</e>\n'
+        )
+    else:
+        # If the SeriesInstanceUID line does not exist, insert it before the closing </script> tag
+        lines.insert(end_script_index, f'<e en="T" t="0020000E" n="SeriesInstanceUID">{new_series_uid}</e>\n')
+
     with open(new_dat_script, "w") as f:
         f.writelines(lines)
 
     return (
         new_patient_id,
         new_patient_name,
+        new_series_uid,
         dateinc,
         new_dat_script,
     )  # Return the generated values and the path to the new script as a tuple
@@ -406,6 +444,82 @@ def get_parser():
         version=f"{__version__}",
     )
     return parser
+
+
+def check_and_rename_dicom_files(dicom_folder: str, patient_identifiers: set[str], replacement_string: str) -> None:
+    """Check if any DICOM filename contains any of the patient names and, if found, rename the files with anonymized filenames.
+
+    This function scans through the specified folder containing DICOM files to detect any filenames that include the patient names.
+    If such filenames are found, it renames these files by replacing the patient names with a new anonymized name.
+
+    Args:
+        dicom_folder (str): Path to the folder containing DICOM files.
+        patient_identifiers (set[str]): A set of strings representing patient identifiers to check for in the DICOM filenames.
+        replacement_string (str): The string to replace the patient name with.
+    """
+    any_needs_renaming = False
+
+    # Gather all DICOM file paths
+    file_paths = []
+    for root, _, files in os.walk(dicom_folder):
+        for file in files:
+            if file.endswith(".dcm"):
+                file_paths.append(Path(root) / file)
+
+    # First pass to check if any file contains the patient names
+    for file_path in file_paths:
+        try:
+            for patient_identifier in patient_identifiers:
+                if patient_identifier.lower() in file_path.name.lower():
+                    any_needs_renaming = True
+                    break
+            if any_needs_renaming:
+                break
+        except Exception as e:
+            print(f"An error occurred while processing {file_path}: {e}")
+
+    # If any file contains a patient name, proceed with renaming
+    if any_needs_renaming:
+
+        for index, file_path in enumerate(file_paths, start=0):
+            try:
+                # Prepare new filename
+                new_filename = file_path.name
+                for patient_identifier in patient_identifiers:
+                    new_filename = f"{replacement_string}.{index}.dcm"
+
+                # Rename file
+                new_file_path = file_path.with_name(new_filename)
+                file_path.rename(new_file_path)
+
+            except Exception as e:
+                print(f"An error occurred while processing {file_path}: {e}")
+
+
+def get_patient_identifiers(dicom_folder: str) -> set[str]:
+    """
+    Get a set of unique patient identifiers from the DICOM files in the specified folder.
+
+    Args:
+        dicom_folder (str): Path to the folder containing DICOM files.
+
+    Returns:
+        set[str]: A set containing unique patient idenfiers found in the DICOM files.
+    """
+    patient_identifiers = set()
+
+    for root, _, files in os.walk(dicom_folder):
+        for file in files:
+            if file.endswith(".dcm"):
+                file_path = Path(root) / file
+                try:
+                    ds = pydicom.dcmread(file_path)
+                    patient_name = str(ds.PatientName).strip()
+                    patient_identifiers.add(patient_name)
+                except Exception as e:
+                    print(f"An error occurred while processing {file_path}: {e}")
+
+    return patient_identifiers
 
 
 def random_with_N_digits(n: int) -> int:
