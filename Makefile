@@ -99,6 +99,11 @@ clean-tests:
 	rm -rf $(PROJECT_DIR)/tests/report
 	rm -rf $(PROJECT_DIR)/tests/tmp
 
+#build-docs: @ Build the Sphinx HTML documentation
+.PHONY: build-docs
+build-docs:
+	sphinx-build -b html $(PROJECT_DIR)/docs/source $(PROJECT_DIR)/docs/build
+
 #help:	@ List available make command for this project
 help:
 	@grep -E '[a-zA-Z\.\-]+:.*?@ .*$$' $(MAKEFILE_LIST)| tr -d '#'  | awk 'BEGIN {FS = ":.*?@ "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

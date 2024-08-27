@@ -151,17 +151,18 @@ def sanitize_all_dicoms_within_root_folder(
     delete_T1w: bool = False,
     delete_T2w: bool = False,
 ) -> int:
-    """Sanitizes all Dicom images located at the datapath in the structure specified by pattern_dicom_files parameter.
+    """
+    Sanitizes all Dicom images located at the datapath in the structure specified by pattern_dicom_files parameter.
 
-    Args :
+    Args:
         datapath (str): The path to the dicom images.
-        pattern_dicom_files (str): the (generic) path to the dicom images starting from the patient folder.
-                                   In a PACSMAN dump, this would reflect e.g. ses-20170115/0002-MPRAGE/*.dcm
-        delete_T1w (bool): delete T1-weighted images that could be used to identify the patients
-        delete_T2w (bool): delete T2-weighted images that could be used to identify the patients
+        pattern_dicom_files (str): The (generic) path to the dicom images starting from the patient folder.
+                                   In a PACSMAN dump, this would reflect e.g. ``ses-20170115/0002-MPRAGE/*.dcm``.
+        delete_T1w (bool): Delete T1-weighted images that could be used to identify the patients.
+        delete_T2w (bool): Delete T2-weighted images that could be used to identify the patients.
 
-    Returns :
-        int : always 0
+    Returns:
+        int: Always 0.
     """
 
     # List all  patient directories.
