@@ -257,6 +257,15 @@ This project is partially funded by the [Lundin Family Brain Tumour Research Cen
 
 We would like to thank Alexandre Wetzel and Augustin Augier for their valuable contributions to this project.
 
+## Authors
+
+This project was developed and maintained by the following contributors:
+
+- **Sébastien Tourbier**
+- **Jonathan Rafael Patino-Lopez**
+- **Elodie Savary**
+- **Jonas Richiardi**
+
 ## License
 
 Copyright 2023-2024 Lausanne University and Lausanne University Hospital, Switzerland & Contributors

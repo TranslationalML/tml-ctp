@@ -52,4 +52,5 @@ Contents
 
    contributing
    license
+   authors
 
