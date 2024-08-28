@@ -37,27 +37,25 @@ There are two ways to install TML-CTP:
 Containerized Execution (Docker)
 --------------------------------
 
-The easiest and recommended way to install and run TML-CTP is by using Docker. This method simplifies the setup process and ensures consistency across different environments. The installation involves two main steps:
-
 1. **Pull the TML-CTP Anonymizer Docker Image**: 
 
-   To get started, pull the Docker image for TML-CTP from `quay.io`:
+   To get started, pull the Docker image for TML-CTP from `quay.io`.
 
    .. code-block:: bash
 
-       docker pull quay.io/translationalml/tml-ctp-anonymizer:1.0.0
+       docker pull quay.io/translationalml/tml-ctp-anonymizer:<version-number>
+
+   **Note:** Replace `<version-number>` with the current version |release|.
 
 2. **Install the TML-CTP Python Package**:
 
-   In a Python 3.10 environment, install the `tml_ctp` package using pip:
+   In a Python 3.10 environment, install the `tml_ctp` package using pip.:
 
    .. code-block:: bash
 
-       pip install tml_ctp==1.0.0
+       pip install tml_ctp==<version-number>
 
-   This will install the main `tml_ctp_dat_batcher` script, along with two utility scripts: `tml_ctp_clean_series_tags` and `tml_ctp_delete_identifiable_dicoms`, as well as all necessary Python dependencies.
-
-Once these steps are completed, you’re all set to use TML-CTP with Docker!
+   **Note:** Replace `<version-number>` with the current version |release|.
 
 Manual Installation (Python 3.10+)
 --------------------------------------------

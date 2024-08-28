@@ -9,12 +9,20 @@
 import os
 import sys
 import mock
+from jinja2 import Template
+
+from tml_ctp.info import __version__  # noqa: 402
 sys.path.insert(0, os.path.abspath('../../tml-ctp'))
 
 project = 'tml_ctp'
 copyright = '2024, Translational Machine Learning Lab Team'
 author = 'Translational Machine Learning Lab Team'
-release = '__version__'
+# Set the release variable to the actual version number
+release = __version__
+
+rst_prolog = Template("""
+.. |release| replace:: {{ release }}
+""").render(release=release)
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
