@@ -52,4 +52,7 @@ Contents
 
    contributing
    license
+   authors
+   acknowledgments
+   funding
 

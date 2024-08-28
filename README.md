@@ -249,6 +249,23 @@ which will take care of (1) re-building the Docker image if necessary, (2) clean
 
 At the end, code coverage reports in different formats are generated and saved inside the `tests/report` directory.
 
+## Funding
+
+This project is partially funded by the [Lundin Family Brain Tumour Research Center](https://www.chuv.ch/en/braintumour/).
+
+## Acknowledgments
+
+We would like to thank Alexandre Wetzel and Augustin Augier for their valuable contributions to this project.
+
+## Authors
+
+This project was developed and maintained by the following contributors:
+
+- **Sébastien Tourbier**
+- **Jonathan Rafael Patino-Lopez**
+- **Elodie Savary**
+- **Jonas Richiardi**
+
 ## License
 
 Copyright 2023-2024 Lausanne University and Lausanne University Hospital, Switzerland & Contributors
