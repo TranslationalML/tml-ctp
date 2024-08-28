@@ -45,7 +45,8 @@ Containerized Execution (Docker)
 
        docker pull quay.io/translationalml/tml-ctp-anonymizer:<version-number>
 
-   **Note:** Replace `<version-number>` with the current version |release|.
+   .. note::
+       Replace `<version-number>` with the current version |release|.
 
 2. **Install the TML-CTP Python Package**:
 
@@ -55,7 +56,10 @@ Containerized Execution (Docker)
 
        pip install tml_ctp==<version-number>
 
-   **Note:** Replace `<version-number>` with the current version |release|.
+   .. note::
+       Use the current version |release| in place of <version-number>.
+   
+   This will install the main `tml_ctp_dat_batcher` script, along with two utility scripts: `tml_ctp_clean_series_tags` and `tml_ctp_delete_identifiable_dicoms`, as well as all necessary Python dependencies.
 
 Manual Installation (Python 3.10+)
 --------------------------------------------
