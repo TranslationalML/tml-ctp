@@ -132,6 +132,7 @@ jobs:
             twine upload --skip-existing dist/*
 
         - name: Push the Docker image to Quay.io
+          if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
           uses: docker/build-push-action@v5
           with:
             context: .
