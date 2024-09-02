@@ -171,16 +171,15 @@ jobs:
         id: check_changes
         run: |
           git add README.md
-          git diff --cached --quiet
-          echo "CHANGES_DETECTED=$?" >> $GITHUB_ENV
+          git diff --cached --quiet || echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
 
       - name: Commit changes
-        if: steps.check_changes.outputs.CHANGES_DETECTED == '1'
+        if: env.CHANGES_DETECTED == 'true'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git commit -m "Update README.md with latest versions"
-            
+              
           # Determine where to push
           if [ -n "${GITHUB_HEAD_REF}" ]; then
             # This is a pull request, push to the PR branch
@@ -189,7 +188,7 @@ jobs:
           elif [ -n "${GITHUB_REF}" ]; then
             BRANCH_NAME=$(echo "${GITHUB_REF}" | sed 's|refs/heads/||')
             echo "Detected branch or tag: ${BRANCH_NAME}"
-            
+              
             # Safety check: Prevent pushing to main during testing
             if [ "${BRANCH_NAME}" != "main" ] && [ "${BRANCH_NAME}" != "master" ]; then
               git push origin HEAD:${BRANCH_NAME}
@@ -199,10 +198,9 @@ jobs:
           else
             echo "No branch or tag detected. Skipping push."
             exit 1
-          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Skip job if no changes
-        if: steps.check_changes.outputs.CHANGES_DETECTED == '0'
+        if: env.CHANGES_DETECTED != 'true'
         run: echo "No changes detected. Skipping commit."
