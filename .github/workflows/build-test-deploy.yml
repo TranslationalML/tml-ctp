@@ -198,6 +198,7 @@ jobs:
           else
             echo "No branch or tag detected. Skipping push."
             exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
