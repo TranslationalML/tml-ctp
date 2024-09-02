@@ -29,7 +29,7 @@ The installation of `TML_CTP` consists of the two following tasks:
 1. Pull the `tml-ctp-anonymizer` image from `quay.io`:
 
   ```bash
-  docker pull quay.io/translationalml/tml-ctp-anonymizer:1.0.0
+  docker pull quay.io/translationalml/tml-ctp-anonymizer:pr-12
   ```
 
 2. In a Python 3.10 environment, install the Python package `tml_ctp` with `pip`:
@@ -70,8 +70,7 @@ options:
                         "old_id2": -3, ...}. If not provided, the script will generate a new day shift
                         randomly.
   --image-tag IMAGE_TAG
-                        Tag of the Docker image to use for running DAT.jar (default: tml-ctp-
-                        anonymizer:<version>).
+                        Tag of the Docker image to use for running DAT.jar.
   --version             show program's version number and exit
 ```
 
