@@ -167,13 +167,20 @@ jobs:
       - name: Run update_readme.py
         run: python update_readme.py
 
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add README.md
+          git diff --cached --quiet
+          echo "CHANGES_DETECTED=$?" >> $GITHUB_ENV
+
       - name: Commit changes
+        if: steps.check_changes.outputs.CHANGES_DETECTED == '1'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add README.md
           git commit -m "Update README.md with latest versions"
-          
+            
           # Determine where to push
           if [ -n "${GITHUB_HEAD_REF}" ]; then
             # This is a pull request, push to the PR branch
@@ -189,9 +196,13 @@ jobs:
             else
               echo "Safety check: Not pushing to main or master branch during testing."
             fi
-          else:
+          else
             echo "No branch or tag detected. Skipping push."
             exit 1
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip job if no changes
+        if: steps.check_changes.outputs.CHANGES_DETECTED == '0'
+        run: echo "No changes detected. Skipping commit."
