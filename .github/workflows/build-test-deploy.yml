@@ -144,3 +144,54 @@ jobs:
               BUILD_DATE=${{ env.BUILD_DATE }}
               VCS_REF=${{ github.sha }}
             provenance: false
+
+  update-readme:
+    runs-on: ubuntu-22.04
+
+    needs: build-test-deploy-docker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run update_readme.py
+        run: python update_readme.py
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add README.md
+          git commit -m "Update README.md with latest versions"
+          
+          # Determine where to push
+          if [ -n "${GITHUB_HEAD_REF}" ]; then
+            # This is a pull request, push to the PR branch
+            echo "Detected pull request branch: ${GITHUB_HEAD_REF}"
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          elif [ -n "${GITHUB_REF}" ]; then
+            BRANCH_NAME=$(echo "${GITHUB_REF}" | sed 's|refs/heads/||')
+            echo "Detected branch or tag: ${BRANCH_NAME}"
+            
+            # Safety check: Prevent pushing to main during testing
+            if [ "${BRANCH_NAME}" != "main" ] && [ "${BRANCH_NAME}" != "master" ]; then
+              git push origin HEAD:${BRANCH_NAME}
+            else
+              echo "Safety check: Not pushing to main or master branch during testing."
+            fi
+          else:
+            echo "No branch or tag detected. Skipping push."
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
