@@ -496,7 +496,7 @@ def get_patient_identifiers(dicom_folder: str) -> set[str]:
         dicom_folder (str): Path to the folder containing DICOM files.
 
     Returns:
-        set[str]: A set containing unique patient idenfiers found in the DICOM files.
+        set[str]: A set containing unique patient identifiers found in the DICOM files.
     """
     patient_identifiers = set()
 
@@ -507,7 +507,14 @@ def get_patient_identifiers(dicom_folder: str) -> set[str]:
                 try:
                     ds = pydicom.dcmread(file_path)
                     patient_name = str(ds.PatientName).strip()
-                    patient_identifiers.add(patient_name)
+
+                    # Split the patient name by spaces and carets (^)
+                    name_parts = patient_name.replace('^', ' ').split()
+
+                    # Add each part to the set of patient identifiers
+                    for part in name_parts:
+                        if part:  # Avoid adding empty strings
+                            patient_identifiers.add(part)
                 except Exception as e:
                     print(f"An error occurred while processing {file_path}: {e}")
 
