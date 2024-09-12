@@ -31,13 +31,13 @@ The installation of `TML_CTP` consists of the two following tasks:
 1. Pull the `tml-ctp-anonymizer` image from `quay.io`:
 
   ```bash
-  docker pull quay.io/translationalml/tml-ctp-anonymizer:1.0.0
+  docker pull quay.io/translationalml/tml-ctp-anonymizer:1.1.1
   ```
 
 2. In a Python 3.10 environment, install the Python package `tml_ctp` with `pip`:
 
   ```bash
-  pip install tml_ctp==1.0.0
+  pip install tml_ctp==1.1.1
   ```
   
   This will install the main `tml_ctp_dat_batcher` script and a two other utility scripts (`tml_ctp_clean_series_tags` and `tmp_ctp_delete_identifiable_dicoms`) among with all Python dependencies.
