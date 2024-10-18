@@ -11,8 +11,7 @@ on:
       - setup.py
       - setup.cfg
       - docker/*
-      - tml_ctp/*
-      - utils/*
+      - tml_ctp/**
   push:
     tags:
       - '[1-9]+.[0-9]+.[0-9]+' # Only deploy on tags with semantic versioning
