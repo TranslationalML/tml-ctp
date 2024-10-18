@@ -139,84 +139,55 @@ def delete_identifiable_dicom_file(
 
 def sanitize_all_dicoms_within_root_folder(
     datapath: str,
-    pattern_dicom_files: str = os.path.join("ses-*", "*", "*"),
+    folder_depth: int = 3,
     delete_T1w: bool = False,
     delete_T2w: bool = False,
 ) -> int:
     """
-    Sanitizes all Dicom images located at the datapath in the structure specified by pattern_dicom_files parameter.
+    Sanitizes all Dicom images located at the datapath in the structure specified by the folder depth.
 
     Args:
         datapath (str): The path to the dicom images.
-        pattern_dicom_files (str): The (generic) path to the dicom images starting from the patient folder.
-                                   In a PACSMAN dump, this would reflect e.g. ``ses-20170115/0002-MPRAGE/*.dcm``.
+        folder_depth (int): The number of folder levels before reaching the DICOM files. Default is 3.
         delete_T1w (bool): Delete T1-weighted images that could be used to identify the patients.
         delete_T2w (bool): Delete T2-weighted images that could be used to identify the patients.
 
     Returns:
         int: Always 0.
     """
+    # Generate the pattern based on the depth provided
+    pattern_dicom_files = os.path.join(datapath, *(["*"] * folder_depth), "*.dcm")
 
-    # List all  patient directories.
-    patients_folders = next(os.walk(datapath))[1]
+    # Find all DICOM files based on the depth
+    all_dicom_files = glob(pattern_dicom_files)
 
-    if not patients_folders:
-        raise NotADirectoryError(
-            "Each patient should have their own directory under the provided root "
-            + datapath
+    if not all_dicom_files:
+        warnings.warn(
+            f"No DICOM files found at the provided depth {folder_depth}. "
+            "Please check the folder structure or depth value."
         )
+        return 0
 
-    # Loop over patients...
-    for _, patient in enumerate(tqdm(patients_folders)):
-        print(f"processing {patient}")
-        current_path = os.path.join(datapath, patient, pattern_dicom_files)
+    # Initialize dictionary to count deleted files per series
+    deleted_files_per_series = {}
 
-        # List all files within patient folder
-        all_filenames = glob(current_path)
+    # Process each DICOM file
+    for dicom_file in all_dicom_files:
+        series_dir = os.path.dirname(dicom_file)  # The folder where the DICOM file is located
 
-        if not all_filenames:
-            warnings.warn(
-                "Problem reading data for patient "
-                + patient
-                + " at "
-                + current_path
-                + "."
-            )
-            warnings.warn(
-                "Patient directories are expect to conform to the pattern set "
-                "in pattern_dicom_files, currently " + pattern_dicom_files
-            )
-        else:
-            # List all study dirs for this patient.
-            study_dirs = next(os.walk(os.path.join(datapath, patient)))[1]
+        # Delete identifiable DICOM file
+        file_deleted = delete_identifiable_dicom_file(dicom_file, delete_T1w, delete_T2w)
 
-            for study_dir in study_dirs:
-                # List all series dirs for this patient.
-                series_dirs = next(os.walk(os.path.join(datapath, patient, study_dir)))[
-                    1
-                ]
+        if file_deleted:
+            # Keep track of the number of deleted files per series
+            if series_dir not in deleted_files_per_series:
+                deleted_files_per_series[series_dir] = 0
+            deleted_files_per_series[series_dir] += 1
 
-                # Loop over this patient's series one by one
-                for series_dir in series_dirs:
-                    all_filenames_series = glob(
-                        os.path.join(datapath, patient, study_dir, series_dir, "*")
-                    )
+    # Print results of deleted files per series
+    for series_dir, n_deleted_files in deleted_files_per_series.items():
+        print(f"Deleted {n_deleted_files} files from series {series_dir}")
 
-                    # Loop over all dicom files within a series and remove offending files
-                    n_deleted_files_in_series = 0
-                    for filename in all_filenames_series:
-                        # TODO speedup - if we flag one file, we can assume the whole series can be deleted and we can
-                        #  just delete the rest of the dir
-                        file_deleted = delete_identifiable_dicom_file(
-                            filename, delete_T1w, delete_T2w
-                        )
-                        if file_deleted:
-                            n_deleted_files_in_series += 1
-
-                    if n_deleted_files_in_series > 0:
-                        print(
-                            f"Deleted {n_deleted_files_in_series} files from series {series_dir}"
-                        )
     return 0
 
 
@@ -247,6 +218,14 @@ def get_parser():
         required=False,
         action="store_true",
     )
+    
+    parser.add_argument(
+        "--folder_depth",
+        "-fd",
+        help="Specify the depth of the DICOM folder (number of subdirectories). Default is 3.",
+        type=int,
+        default=3
+    )
     return parser
 
 
@@ -259,6 +238,7 @@ def main():
     data_path = os.path.normcase(os.path.abspath(args.in_folder))
     delete_T1w = args.delete_T1w
     delete_T2w = args.delete_T2w
+    folder_depth = args.folder_depth  # Capture the folder depth argument
 
     if not os.path.isdir(data_path):
         raise NotADirectoryError("Input directory does not exist.")
@@ -270,7 +250,7 @@ def main():
     )
     # Sanitize all files.
     _ = sanitize_all_dicoms_within_root_folder(
-        datapath=data_path, delete_T1w=delete_T1w, delete_T2w=delete_T2w
+        datapath=data_path, folder_depth=folder_depth, delete_T1w=delete_T1w, delete_T2w=delete_T2w
     )
 
 

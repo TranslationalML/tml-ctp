@@ -165,3 +165,8 @@ After running `tml_ctp_dat_batcher`, you may need to delete files that could lea
                             Root directory containing the DICOM files to be screened for identifiable data.
       --delete_T1w, -t1w    Delete potentially identifiable T1-weighted images (e.g., MPRAGE).
       --delete_T2w, -t2w    Delete potentially identifiable T2-weighted images (e.g., FLAIR).
+      --folder_depth FOLDER_DEPTH, -fd FOLDER_DEPTH
+                            Specify the folder depth to scan for DICOM files. 
+                            The folder depth refers to how many nested subdirectories should be traversed from the root folder
+                            to reach the DICOM files. The default value is 3, meaning the script expects the DICOM files to be 
+                            in a structure with three levels of subdirectories.
