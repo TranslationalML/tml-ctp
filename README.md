@@ -174,7 +174,7 @@ You can use `delete_identifiable_dicoms.py` for that.
 ### Usage
 
 ```output
-usage: tml_ctp_delete_identifiable_dicoms [-h] --in_folder IN_FOLDER [--delete_T1w] [--delete_T2w] [--folder_depth FOLDER_DEPTH]
+usage: tml_ctp_delete_identifiable_dicoms [-h] --in_folder IN_FOLDER [--delete_T1w] [--delete_T2w] [--pattern_dicom_files PATTERN]
 
 Delete DICOM files that could lead to identifying the patient.
 
@@ -184,7 +184,16 @@ options:
                         Root dir to the dicom files to be screened for identifiables files.
   --delete_T1w, -t1w    Delete potentially identifiable T1-weighted images such as MPRAGE
   --delete_T2w, -t2w    Delete potentially identifiable T2-weighted images such as FLAIR
-  --folder_depth FOLDER_DEPTH, -fd FOLDER_DEPTH    Specify the folder depth to scan for DICOM files. Default is 3.
+  --pattern_dicom_files, -p    PATTERN_DICOM_FILES Pattern for the DICOM file structure inside patient folder.
+```
+
+###  Example 
+
+```output
+python delete_identifiable_dicoms.py \
+  --in_folder /path/to/input/folder \
+  --pattern_dicom_files "*/*/*.dcm" \
+  --delete_T1w
 ```
 
 ## For Developers

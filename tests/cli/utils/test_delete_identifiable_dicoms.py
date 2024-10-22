@@ -1,7 +1,16 @@
+# Copyright 2023-2024 Lausanne University and Lausanne University Hospital, Switzerland & Contributors
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+"""Define tests for the clean_series_tags CLI script."""
+
 import os
 import shutil
 import glob
 import pydicom
+import pandas as pd
 
 
 def create_custom_folder_structure(source_dir, dest_dir, depth):
@@ -19,7 +28,7 @@ def create_custom_folder_structure(source_dir, dest_dir, depth):
 
     # Copy each DICOM file from source_dir into the new structure at the specified depth
     dicom_files = glob.glob(os.path.join(source_dir, "*", "*", "*", "*.dcm"))
-    
+
     for idx, dicom_file in enumerate(dicom_files):
         # Generate subdirectories based on the depth argument
         subfolder_path = os.path.join(dest_dir, *[f"subdir_{i}" for i in range(depth)])
@@ -71,13 +80,13 @@ def test_delete_identifiable_dicoms_script_basic(script_runner, test_dir, data_d
     assert len(dicom_files) == 0
 
 
-def test_delete_identifiable_dicoms_with_custom_depth(script_runner, test_dir, data_dir):
+def test_delete_identifiable_dicoms_with_custom_pattern(script_runner, test_dir, data_dir):
     """
-    Test the script with a custom folder depth (different from the default).
+    Test the script with a custom folder structure.
     """
 
     test_dataset = "PACSMANCohort-delete_identifiable_dicoms_custom"
-    custom_depth = 5
+    custom_depth = 5  # The depth for this custom folder structure
     custom_dataset_path = os.path.join(test_dir, "tmp", f"{test_dataset}_depth_{custom_depth}")
     original_dataset_path = os.path.join(test_dir, "tmp", f"{test_dataset}_original")
 
@@ -87,7 +96,7 @@ def test_delete_identifiable_dicoms_with_custom_depth(script_runner, test_dir, d
         original_dataset_path,
     )
 
-    # Add missing SequenceName to all dicom files in the default test_dataset
+    # Add missing SequenceName to all DICOM files in the default test_dataset
     dicom_files = glob.glob(
         os.path.join(original_dataset_path, "*", "*", "*", "*.dcm")
     )
@@ -99,24 +108,24 @@ def test_delete_identifiable_dicoms_with_custom_depth(script_runner, test_dir, d
     # Create custom folder structure with depth 5
     create_custom_folder_structure(original_dataset_path, custom_dataset_path, custom_depth)
 
-    # Run the script with the custom folder depth
+    # Define a custom pattern for the DICOM files based on the folder structure created
+    custom_pattern = os.path.join(custom_dataset_path, *["*"] * custom_depth, "*.dcm")
+
     cmd = [
         "tml_ctp_delete_identifiable_dicoms",
         "--in_folder",
         custom_dataset_path,
         "-t1w",
-        "--folder_depth",
-        str(custom_depth),  # Provide custom folder depth
+        "--pattern_dicom_files",
+        custom_pattern,  
     ]
 
     ret = script_runner.run(cmd)
 
-    # Check that the script has run successfully for custom depth
     assert ret.success
     assert "Deleted 128 files" in ret.stdout
 
-    # Check that all dicom files have been deleted as SequenceName is tfl3d in the custom structure
     dicom_files = glob.glob(
-        os.path.join(custom_dataset_path, *[f"subdir_{i}" for i in range(custom_depth)], "*.dcm")
+        os.path.join(custom_dataset_path, *["*"] * custom_depth, "*.dcm")
     )
     assert len(dicom_files) == 0
