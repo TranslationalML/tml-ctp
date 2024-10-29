@@ -12,7 +12,7 @@ import mock
 from jinja2 import Template
 
 from tml_ctp.info import __version__  # noqa: 402
-sys.path.insert(0, os.path.abspath('../../tml-ctp'))
+sys.path.insert(0, os.path.abspath('../../tml_ctp'))
 
 project = 'tml_ctp'
 copyright = '2024, Translational Machine Learning Lab Team'
@@ -44,10 +44,6 @@ extensions = [
     "myst_parser",
 ]
 
-# Add additional extension if on readthedocs
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-if on_rtd:
-    extensions.append("readthedocs_ext.readthedocs")
 
 # autodoc_default_options = {
 #    'autosummary': True,
@@ -108,7 +104,7 @@ master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "_build/doctrees"]
 default_role = "obj"
 
 # The reST default role (used for this markup: `text`) to use for all documents.
