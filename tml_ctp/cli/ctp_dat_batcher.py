@@ -331,7 +331,7 @@ def rename_ctp_output_subject_folders(CTP_output_folder: str, subject_folder: st
                         ds.StudyDate if hasattr(ds, "StudyDate") else "NoStudyDate"
                     )
                     new_study_time = (
-                        ds.StudyTime if hasattr(ds, "StudyTime") else "NoStudyTime"
+                        ds.StudyTime.split(".")[0] if hasattr(ds, "StudyTime") else "NoStudyTime"
                     )
                     new_series_number = (
                         ds.SeriesNumber
