@@ -155,7 +155,7 @@ After running `tml_ctp_dat_batcher`, you may need to delete files that could lea
 
 .. code-block:: bash
 
-    usage: tml_ctp_delete_identifiable_dicoms [-h] --in_folder IN_FOLDER [--delete_T1w] [--delete_T2w]
+    usage: tml_ctp_delete_identifiable_dicoms [-h] --in_folder IN_FOLDER [--delete_T1w] [--delete_T2w] [--pattern_dicom_files PATTERN_DICOM_FILES]
 
     Delete DICOM files that could lead to patient identification.
 
@@ -165,3 +165,27 @@ After running `tml_ctp_dat_batcher`, you may need to delete files that could lea
                             Root directory containing the DICOM files to be screened for identifiable data.
       --delete_T1w, -t1w    Delete potentially identifiable T1-weighted images (e.g., MPRAGE).
       --delete_T2w, -t2w    Delete potentially identifiable T2-weighted images (e.g., FLAIR).
+      --pattern_dicom_files, -p PATTERN_DICOM_FILES
+                            Custom pattern for the DICOM file structure inside patient folder. Default is '*/*/*.dcm'.
+
+
+**Basic Example**:
+
+.. code-block:: bash
+
+    python delete_identifiable_dicoms.py \
+      --in_folder /path/to/input/folder \
+      --delete_T1w
+
+**Custom Pattern Example**:
+
+.. code-block:: bash
+
+    python delete_identifiable_dicoms.py \
+      --in_folder /path/to/input/folder \
+      --pattern_dicom_files "*/*/*.dcm" \
+      --delete_T1w
+
+In these examples:
+- The `--in_folder` should point to the directory that contains the `sub-*` patient folders.
+- The `--pattern_dicom_files` allows you to specify a custom pattern if your DICOM folder structure deviates from the default.
